@@ -1,9 +1,18 @@
 import { curry, merge } from 'ramda';
 import { UPDATE, USER_APPLICATION } from '../domain/index';
 import { DOMAIN_ACTION, STEP_ABOUT, STEP_QUESTION, STEP_REVIEW, STEP_TEAM_DETAIL, STEP_TEAMS, } from './properties';
+import {
+  updateModelWithAboutDataAndStepQuestion, updateModelWithAboutDataAndStepReview, updateModelWithAppliedData,
+  updateModelWithQuestionDataAndStepReview, updateModelWithQuestionDataAndTeamsStep
+} from "./processApplicationModelUpdates"
+import { decorateWithEntryActions, mergeActionFactories as _mergeActionFactories, NO_OUTPUT } from 'state-transducer';
+import { mergeOutputFn } from "../helpers"
+
 
 ///////
 // Helpers
+const mergeActionFactories = curry(_mergeActionFactories)(mergeOutputFn);
+
 export function reShapeEventData(formData, step) {
   switch (step) {
     case STEP_ABOUT :
@@ -113,4 +122,12 @@ export function makeRequestToUpdateUserApplicationWithHasApplied(model, eventDat
 }
 
 ///////
-// Action guards
+// Actions
+export const updateUserAppAndRenderQuestionStep = mergeActionFactories([makeRequestToUpdateUserApplication(STEP_QUESTION), updateModelWithAboutDataAndStepQuestion]);
+export const updateUserAppAndRenderReviewStep = mergeActionFactories([makeRequestToUpdateUserApplication(STEP_REVIEW), updateModelWithAboutDataAndStepReview])
+export const updateUserAppAndRenderTeamsStepT = mergeActionFactories(makeRequestToUpdateUserApplication(STEP_TEAMS), updateModelWithQuestionDataAndTeamsStep);
+export const updateUserAppAndRenderReviewStepR = mergeActionFactories([makeRequestToUpdateUserApplication(STEP_REVIEW), updateModelWithQuestionDataAndStepReview]);
+export const updateUserAppWithHasReviewed = mergeActionFactories([makeRequestToUpdateUserApplicationWithHasReviewed, updateModelWithQuestionDataAndStepReview]);
+export const updateUserAppWithHasApplied = mergeActionFactories([makeRequestToUpdateUserApplicationWithHasApplied, updateModelWithAppliedData]);
+
+

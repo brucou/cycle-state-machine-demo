@@ -21,7 +21,6 @@
     "rxjs": "5.4.3",
     "ramda": "^0.25.0",
     "state-transducer": "^0.1.0",
-    "@rxcc/components": "^0.4.4",
     "@rxcc/contracts": "^0.1.11",
     "@rxcc/drivers": "~0.1.9",
     "@rxcc/testing": "^0.1.3",

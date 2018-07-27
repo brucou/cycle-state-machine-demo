@@ -1,5 +1,5 @@
 import { curry, flatten, keys, pick, reduce } from 'ramda';
-import { addOpToJsonPatch, getSelectedKey, toJsonPatch } from '@rxcc/components';
+import { addOpToJsonPatch, getSelectedKey, toJsonPatch } from '../helpers';
 import {
   aboutYouFields, personalFields, questionFields, STEP_ABOUT, STEP_QUESTION, STEP_REVIEW, STEP_TEAM_DETAIL, STEP_TEAMS
 } from './properties';
@@ -272,7 +272,7 @@ export const updateModelWithTeamDetailValidationMessages = mergeModelUpdates([
   updateModelWithStepOnly(STEP_TEAM_DETAIL)
 ]);
 
-export const updateModelWithAboutValidationMessages = mergeModelUpdates([
+export const updateModelWithAboutStepValidationMessages = mergeModelUpdates([
   updateModelWithAboutData,
   updateModelWithValidationData,
   updateModelWithStepOnly(STEP_ABOUT)

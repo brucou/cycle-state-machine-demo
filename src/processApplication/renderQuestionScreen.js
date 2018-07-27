@@ -1,17 +1,13 @@
-import { div, form, h4, i, p, textarea } from 'cycle-snabbdom';
-import { curry } from 'ramda';
+import { div, form, h4, i, p, textarea } from "@cycle/dom/lib/index"
 import {
-  STEP_ABOUT, STEP_APPLIED, STEP_QUESTION, STEP_REVIEW, STEP_TEAM_DETAIL, STEP_TEAMS,
-  USER_APPLICATION_QUESTION_CONTINUE_BUTTON_SELECTOR, USER_APPLICATION_FORM_INPUT_OPP_ANSWER_SELECTOR,
+  USER_APPLICATION_FORM_INPUT_OPP_ANSWER_SELECTOR, USER_APPLICATION_QUESTION_CONTINUE_BUTTON_SELECTOR,
   USER_APPLICATION_QUESTION_SCREEN_ANSWER_ERROR_SELECTOR
-} from './properties';
-import { makeErrDiv} from './processApplicationRender';
-import { Observable as $ } from "rx";
+} from "./properties"
 import {
-  makeInputProps, renderHeader, renderProgressIndicator, renderTitle
-} from './processApplicationRender';
+  makeErrDiv, makeInputProps, renderHeader, renderProgressIndicator, renderTitle
+} from "./renderHelpers"
 
-function renderQuestionScreen(model) {
+export function renderQuestionScreen(model) {
   const {
     opportunity: {
       description, question
@@ -77,30 +73,3 @@ function renderQuestionScreen(model) {
     divErrorMessage
   ])
 }
-
-function render(model) {
-  const { userApplication: { progress: { step } } } = model;
-
-  switch (step) {
-    case STEP_QUESTION:
-      return renderQuestionScreen(model);
-    case STEP_ABOUT :
-    case STEP_TEAMS:
-    case STEP_TEAM_DETAIL:
-    case STEP_REVIEW:
-    case STEP_APPLIED :
-    default :
-      console.error(`fatal error while rendering ${step}`)
-      throw 'render > internal error : unknown steps or step is not QUESTION as expected!!'
-  }
-}
-
-function _renderComponent(sources, settings) {
-  const { model } = settings;
-
-  return {
-    DOM: $.just(render(model))
-  }
-}
-
-export const processApplicationRenderQuestionScreen = curry(_renderComponent);

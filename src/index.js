@@ -1,12 +1,14 @@
-import {run} from '@cycle/rxjs-run'
-import {makeDOMDriver } from '@cycle/dom'
-import {App} from './app'
+// Core
+import { run } from '@cycle/rxjs-run'
+import { makeDOMDriver } from '@cycle/dom'
+import { App } from './app'
 import * as localForage from "localforage";
-// drivers
-import { makeDomainActionDriver, makeDomainQueryDriver } from '@rxcc/drivers';
-import { defaultUser, loadTestData } from '../fixtures';
 // domain
+import { makeDomainActionDriver } from './domain/actionDriver';
+import { makeDomainQueryDriver } from './domain/queryDriver';
 import { domainActionsConfig, domainObjectsQueryMap } from './domain/index';
+// fixtures
+import { defaultUser, loadTestData } from '../fixtures';
 
 const repository = localForage;
 

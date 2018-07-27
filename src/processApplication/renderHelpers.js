@@ -1,12 +1,13 @@
-import { a, div, i, p } from 'cycle-snabbdom';
+import { a, div, i, p } from '@cycle/dom';
 import {
-  COMPLETE_YOUR_APPLICATION_FOR, STEP_ABOUT, STEP_QUESTION, STEP_REVIEW, STEP_TEAM_DETAIL,
-  STEP_TEAMS,
+  COMPLETE_YOUR_APPLICATION_FOR, STEP_ABOUT, STEP_QUESTION, STEP_REVIEW, STEP_TEAM_DETAIL, STEP_TEAMS,
 } from './properties';
 import { curry } from "ramda"
 import { isBoolean } from "@rxcc/contracts"
+import { a, div, i, p } from "@cycle/dom/lib/index"
 
-//////
+
+/////////////////
 // Render function helpers
 
 export function renderHeader(projectName, projectDate) {

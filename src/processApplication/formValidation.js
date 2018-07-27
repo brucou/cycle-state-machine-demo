@@ -2,7 +2,6 @@ import { cond, curry, gt, isEmpty, length, mapObjIndexed, pipe, T } from 'ramda'
 import {
   FIELD_MIN_LENGTH, MANDATORY_PLEASE_FILL_IN_VALID_ERROR, MIN_LENGTH_VALID_ERROR
 } from "./properties"
-import { traceFn } from "@rxcc/utils"
 
 //////
 // Form data validation
@@ -35,7 +34,7 @@ export const aboutScreenFieldValidationSpecs = {
   'superPower': validateSuperPower,
   'legalName': validateLegalName,
   'preferredName': validatePreferredName,
-  'phone': traceFn(validatePhone, `validatePhone`),
+  'phone': validatePhone,
   'birthday': validateBirthday,
   'zipCode': validateZipCode
 };

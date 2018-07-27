@@ -1,14 +1,12 @@
-import { button, div, i, img, p } from 'cycle-snabbdom';
-import { Observable as $ } from "rx"
-import { curry, mapObjIndexed, complement, isNil, values } from 'ramda';
+import { button, div, i, img, p } from "@cycle/dom/lib/index"
 import {
-  ABOUT_YOU, STEP_ABOUT, STEP_APPLIED, STEP_QUESTION, STEP_REVIEW, STEP_TEAM_DETAIL, STEP_TEAMS,
-  USER_APPLICATION_REVIEW_ABOUT_SELECTOR, USER_APPLICATION_REVIEW_OPP_QUESTION_SELECTOR,
-  USER_APPLICATION_REVIEW_SUBMIT_SELECTOR, USER_APPLICATION_REVIEW_TEAMS_SELECTOR,
-} from './properties';
-import { makeErrDiv, renderHeader, renderProgressIndicator } from './processApplicationRender';
+  ABOUT_YOU, USER_APPLICATION_REVIEW_ABOUT_SELECTOR, USER_APPLICATION_REVIEW_OPP_QUESTION_SELECTOR,
+  USER_APPLICATION_REVIEW_SUBMIT_SELECTOR, USER_APPLICATION_REVIEW_TEAMS_SELECTOR
+} from "./properties"
+import { complement, isNil, mapObjIndexed, values } from "ramda"
+import { makeErrDiv, renderHeader, renderProgressIndicator } from "./renderHelpers"
 
-function renderReviewScreen(model) {
+export function renderReviewScreen(model) {
   const {
     opportunity: {
       description, question
@@ -139,30 +137,3 @@ function renderReviewScreen(model) {
     divErrorMessage
   ])
 }
-
-function render(model) {
-  const { userApplication: { progress: { step } } } = model;
-
-  switch (step) {
-    case STEP_REVIEW:
-      return renderReviewScreen(model);
-    case STEP_ABOUT :
-    case STEP_QUESTION:
-    case STEP_TEAMS:
-    case STEP_TEAM_DETAIL:
-    case STEP_APPLIED :
-    default :
-      console.error(`fatal error while rendering ${step}`)
-      throw 'render > internal error : unknown steps or step is not REVIEW as expected!!'
-  }
-}
-
-function _renderComponent(sources, settings) {
-  const { model } = settings;
-
-  return {
-    DOM: $.just(render(model))
-  }
-}
-
-export const processApplicationRenderReviewScreen = curry(_renderComponent);

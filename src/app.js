@@ -1,5 +1,5 @@
 import Rx from 'rxjs/Rx'
-import { events as eventsFactory, states, transitions } from './processApplication/processApplicationFsmDef';
+import { events as eventsFactory, states, transitions } from './processApplication/fsmSpecs';
 import { keys, mapObjIndexed, prop } from 'ramda'
 import { makeStreamingStateMachine } from 'state-transducer'
 import { fakeOpportunityKey, fakeProjectKey, fakeUserKey } from "../fixtures"

@@ -1,7 +1,5 @@
 import { allPass, both, complement, contains, flip, isNil, values } from 'ramda';
-import {
-  isBoolean, isHashMap, isNumber, isStrictRecord, isString
-} from "@rxcc/contracts"
+import { isBoolean, isHashMap, isNumber, isStrictRecord, isString } from "@rxcc/contracts"
 import { applicationProcessSteps } from "../processApplication/properties"
 
 export const isApplicationAboutYouInfo = isStrictRecord({
@@ -30,9 +28,9 @@ export const isApplicationQuestionInfo = isStrictRecord({
 });
 
 export const isApplicationTeamInfo = isStrictRecord({
-  description : isString,
-  question : isString,
-  name : isString,
+  description: isString,
+  question: isString,
+  name: isString,
   answer: isString,
   hasBeenJoined: isBoolean
 });

@@ -5,7 +5,7 @@ import {
 import {
   aboutScreenFieldValidationSpecs, questionScreenFieldValidationSpecs,
   teamDetailScreenFieldValidationSpecs, validateScreenFields
-} from './processApplicationValidation';
+} from './formValidation';
 import {
   STEP_ABOUT, STEP_REVIEW, USER_APPLICATION_ABOUT_CONTINUE_BUTTON_SELECTOR,
   USER_APPLICATION_BACK_TO_TEAMS_SELECTOR, USER_APPLICATION_JOIN_UNJOIN_TEAM_SELECTOR,
@@ -15,7 +15,7 @@ import {
   USER_APPLICATION_TEAMLIST_SELECTOR
 } from './properties';
 import { isBoolean } from "@rxcc/contracts"
-import { preventDefault } from "@rxcc/utils"
+import { preventDefault } from "../helpers"
 import { USER_APPLICATION_QUESTION_CONTINUE_BUTTON_SELECTOR } from "./properties/index"
 
 ///////

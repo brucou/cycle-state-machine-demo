@@ -1,15 +1,12 @@
-import { a, button, div, form, i, p, textarea } from 'cycle-snabbdom';
-import { curry, keys } from 'ramda';
+import { keys } from "ramda"
+import { a, button, div, form, i, p, textarea } from "@cycle/dom/lib/index"
 import {
-  STEP_ABOUT, STEP_APPLIED, STEP_QUESTION, STEP_REVIEW, STEP_TEAM_DETAIL, STEP_TEAMS,
   USER_APPLICATION_BACK_TO_TEAMS_SELECTOR, USER_APPLICATION_FORM_INPUT_TEAM_ANSWER_SELECTOR,
-  USER_APPLICATION_JOIN_UNJOIN_TEAM_SELECTOR, USER_APPLICATION_SKIP_TEAM_SELECTOR,
-} from './properties';
-import { makeInputProps } from './processApplicationRender';
-import { Observable as $ } from "rx";
-import { renderHeader, renderProgressIndicator, renderTitle } from './processApplicationRender';
+  USER_APPLICATION_JOIN_UNJOIN_TEAM_SELECTOR, USER_APPLICATION_SKIP_TEAM_SELECTOR
+} from "./properties"
+import { makeInputProps, renderHeader, renderProgressIndicator, renderTitle } from "./renderHelpers"
 
-function renderTeamDetailScreen(model) {
+export function renderTeamDetailScreen(model) {
   const {
     opportunity: {
       description, question
@@ -86,30 +83,3 @@ function renderTeamDetailScreen(model) {
     divErrorMessage
   ])
 }
-
-function render(model) {
-  const { userApplication: { progress: { step } } } = model;
-
-  switch (step) {
-    case STEP_TEAM_DETAIL:
-      return renderTeamDetailScreen(model);
-    case STEP_ABOUT :
-    case STEP_QUESTION:
-    case STEP_TEAMS:
-    case STEP_REVIEW:
-    case STEP_APPLIED :
-    default :
-      console.error(`fatal error while rendering ${step}`)
-      throw 'render > internal error : unknown steps or step is not TEAM DETAIL as expected!!'
-  }
-}
-
-function _renderComponent(sources, settings) {
-  const { model } = settings;
-
-  return {
-    DOM: $.just(render(model))
-  }
-}
-
-export const processApplicationRenderTeamDetailScreen = curry(_renderComponent);

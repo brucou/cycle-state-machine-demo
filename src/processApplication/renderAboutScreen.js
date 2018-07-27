@@ -1,4 +1,4 @@
-import { div, form, h4, input } from '@cycle/dom';
+import { div, form, h4, input } from "@cycle/dom/lib/index"
 import {
   ABOUT_YOU, BIRTHDAY, CONTINUE, PERSONAL_DETAILS, PREFERRED_NAME, USER_APPLICATION_ABOUT_CONTINUE_BUTTON_SELECTOR,
   USER_APPLICATION_ABOUT_SCREEN_BIRTHDAY_ERROR_SELECTOR, USER_APPLICATION_ABOUT_SCREEN_LEGAL_NAME_ERROR_SELECTOR,
@@ -7,11 +7,11 @@ import {
   USER_APPLICATION_FORM_INPUT_BIRTHDAY_SELECTOR, USER_APPLICATION_FORM_INPUT_LEGAL_NAME_SELECTOR,
   USER_APPLICATION_FORM_INPUT_PHONE_SELECTOR, USER_APPLICATION_FORM_INPUT_PREFERRED_NAME_SELECTOR,
   USER_APPLICATION_FORM_INPUT_SUPERPOWER_SELECTOR, USER_APPLICATION_FORM_INPUT_ZIPCODE_SELECTOR,
-  WHAT_IS_YOUR_SUPER_POWER, ZIPCODE,
-} from './properties';
+  WHAT_IS_YOUR_SUPER_POWER, ZIPCODE
+} from "./properties"
 import {
   makeErrDiv, makeInputProps, renderHeader, renderProgressIndicator, renderTitle
-} from './processApplicationRender';
+} from "./renderHelpers"
 
 export function renderAboutScreen(model, eventData, settings) {
   const {

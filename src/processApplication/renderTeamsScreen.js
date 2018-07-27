@@ -1,15 +1,11 @@
-import { Observable as $ } from "rx";
-import { div, h4, img } from "cycle-snabbdom";
-import { addIndex, curry, keys, map, none, prop } from 'ramda';
-import {
-  STEP_ABOUT, STEP_APPLIED, STEP_QUESTION, STEP_REVIEW, STEP_TEAM_DETAIL, STEP_TEAMS,
-  USER_APPLICATION_TEAM_CONTINUE_BUTTON_SELECTOR, USER_APPLICATION_TEAMLIST_SELECTOR
-} from './properties';
-import { renderHeader, renderProgressIndicator, renderTitle } from './processApplicationRender';
+import { addIndex, keys, map, none } from "ramda"
+import { div, h4, img } from "@cycle/dom/lib/index"
+import { USER_APPLICATION_TEAM_CONTINUE_BUTTON_SELECTOR, USER_APPLICATION_TEAMLIST_SELECTOR } from "./properties"
+import { renderHeader, renderProgressIndicator, renderTitle } from "./renderHelpers"
 
 const mapIndexed = addIndex(map);
 
-function renderTeamScreen(model) {
+export function renderTeamScreen(model) {
   const {
     opportunity: {
       description, question
@@ -77,30 +73,3 @@ function renderTeamScreen(model) {
     divErrorMessage
   ])
 }
-
-function render(model) {
-  const { userApplication: { progress: { step } } } = model;
-
-  switch (step) {
-    case STEP_TEAMS:
-      return renderTeamScreen(model);
-    case STEP_ABOUT :
-    case STEP_QUESTION:
-    case STEP_TEAM_DETAIL:
-    case STEP_REVIEW:
-    case STEP_APPLIED :
-    default :
-      console.error(`fatal error while rendering ${step}`)
-      throw 'render > internal error : unknown steps or step is not TEAMS as expected!!'
-  }
-}
-
-function _renderComponent(sources, settings) {
-  const { model } = settings;
-
-  return {
-    DOM: $.just(render(model))
-  }
-}
-
-export const processApplicationRenderTeamsScreen = curry(_renderComponent);
