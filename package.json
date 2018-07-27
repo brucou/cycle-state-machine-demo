@@ -22,10 +22,6 @@
     "ramda": "^0.25.0",
     "state-transducer": "^0.1.0",
     "@rxcc/contracts": "^0.1.11",
-    "@rxcc/drivers": "~0.1.9",
-    "@rxcc/testing": "^0.1.3",
-    "@rxcc/utils": "^0.1.8",
-    "@rxcc/tracing": "^0.1.1",
     "localforage": "^1.5.0"
   }
 }
