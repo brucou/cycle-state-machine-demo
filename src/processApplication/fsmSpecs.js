@@ -1,5 +1,5 @@
 import { both, complement, T } from 'ramda';
-import { decorateWithEntryActions, INIT_EVENT, INIT_STATE, NO_OUTPUT } from 'state-transducer';
+import { decorateWithEntryActions, INIT_EVENT, INIT_STATE, NO_OUTPUT } from '../../../state-transducer/src'
 import { STEP_ABOUT, STEP_QUESTION, STEP_REVIEW, STEP_TEAMS } from './properties';
 import {
   updateUserAppAndRenderQuestionStep, updateUserAppAndRenderReviewStep, updateUserAppAndRenderReviewStepR,
@@ -10,14 +10,14 @@ import {
   updateModelWithJoinedOrUnjoinedTeamData, updateModelWithQuestionValidationMessages, updateModelWithSelectedTeamData,
   updateModelWithSkippedTeamData, updateModelWithStepAndHasReviewed, updateModelWithStepOnly,
   updateModelWithTeamDetailAnswerAndNextStep, updateModelWithTeamDetailValidationMessages
-} from './processApplicationModelUpdates';
+} from './modelUpdates';
 import {
   aboutContinueEventFactory, applicationCompletedEventFactory, backTeamClickedEventFactory, changeAboutEventFactory,
   changeQuestionEventFactory, changeTeamsEventFactory, hasApplied, hasJoinedAtLeastOneTeam, hasReachedReviewStep,
   isFormValid, isStep, joinTeamClickedEventFactory, questionContinueEventFactory, skipTeamClickedEventFactory,
   teamClickedEventFactory, teamContinueEventFactory
 } from './fsmEvents';
-import { fetchUserApplicationModelData } from './processApplicationFetch';
+import { fetchUserApplicationModelData } from './fetch';
 import { renderInitScreen } from "./renderInitScreen";
 import { renderAppliedScreen } from "./renderAppliedScreen";
 import { mergeOutputFn } from "../helpers"
@@ -27,14 +27,17 @@ import { renderTeamScreen } from "./renderTeamsScreen"
 import { renderTeamDetailScreen } from "./renderTeamDetailScreen"
 import { renderReviewScreen } from "./renderReviewScreen"
 
-const INIT_S = 'INIT';
+// Control states monikers
+// DOC must be idenifier for functions, so no spaces!!
+const INIT_S = 'INIT_S';
 const STATE_ABOUT = 'About';
 const STATE_QUESTION = 'Question';
 const STATE_TEAMS = 'Teams';
-const STATE_TEAM_DETAIL = 'Team Detail';
+const STATE_TEAM_DETAIL = 'Team_Detail';
 const STATE_REVIEW = 'Review';
-const STATE_APPLIED = 'State Applied';
+const STATE_APPLIED = 'State_Applied';
 
+// Events' moniker
 const FETCH_EV = 'fetch';
 const ABOUT_CONTINUE = 'about_continue';
 const QUESTION_CONTINUE = 'question_continue';
@@ -48,22 +51,43 @@ const CHANGE_QUESTION = 'change_question';
 const CHANGE_TEAMS = 'change_teams';
 const APPLICATION_COMPLETED = 'application_completed';
 
-// NOTE : we have different events and event factories for each continue button, because the event
-// data for those events are different
-// NOTE : we have different selectors for the continue button because otherwise we would fire
-// all continue events which would correctly advance the state machine for the good event, but
-// display warning for the rest of the events. To suppress the warning, we decide to have
-// different selectors
+// ADR : state machine design
+// A possible design is to have all the `Continue` button click modelized by the same event in the state machine.
+// Given that the corresponding actions are different, this would mean that action needs extra data to produce its
+// output. In this case, the extra data is the control state AND the form data('Continue' leads to saving the currently
+// displayed form data, data which will depends on the control state). However :
+// - the action factory does not have access to the control state of the state machine. That means we would have to
+// replicate that information in the extended state of our state machine
+// - the form data CANNOT be included in the extended state of the state machine. It is to be read only at
+// 'Continue' click time and immediately processed by the action factory
+// - because our action factories are pure functions, any reading of form data CANNOT be realized there
+// - this leaves only the event factories as the place to perform the reading of the form data
+// So :
+// - a single 'Continue' click event factory, will have to do a big `switch` among possible control states
+// - while this is possible, it is bad design:
+//   - you need to write extra code to replicate the control state in the extended state, and keep that code updated
+// with every iteration of the design of the state machine
+//   - control states exist precisely for control flow purposes, i.e. to capture and expose the `if/then/else` logic
+// pertaining to the computation. Moving this logic out of the control states towards the extended state and use
+// guards as control flow mechanism is equivalent semantically but only replicates an already existing functionality.
+//   - In the end, you loose traceability (hidden control flow), and maintainability (the one-reason-to-change SOLID
+// principle is violated)
+//   - in exchange, you get to spare writing a few event factories, which has little incidence on the
+// correctness of the computation, or its performance
+//
+// In the end, `Continue` clicks do not share the same semantics and should hence have separate handlers. If those
+// handlers share common code, that common code can always be factored out in a utility function.
+
 export const events = {
-  // NOTE : We used a trick here to have the fetch event automatically received by the state machine before any
-  // other event :
-  // - All event factories are executed when the state machine is started.
+  // NOTE : The `FETCH_EV` event will be received by the state machine before any other event, as it should :
+  // - All event factories are executed when the state machine is started
   // - `fetchUserApplicationModelData` return an observable which when subscribed immediately emits a value,
   // triggering the state machine transition - in fact emission is almost immediate as data is in local storage
   // - other event factories activate listeners on user events which do not immediately fire as there is no
-  // immediatee user action
+  // immediate user action. In the highly unlikely event that a user event is triggered so fast that it is processed
+  // before reading from local storage, well houston we have a problem (typical race condition). So we put the
+  // `FETCH_EV` factory first among all the factories, so it is executed first, and its events are processed first
   // - as a result, the fetch event is the first to fire and the data stored (in local storage here) is fetched
-  // - the fetch events fires as a consequence of subscription to the event source
   [FETCH_EV]: fetchUserApplicationModelData,
   [ABOUT_CONTINUE]: aboutContinueEventFactory,
   [QUESTION_CONTINUE]: questionContinueEventFactory,
@@ -79,13 +103,13 @@ export const events = {
 };
 
 export const states = {
-  INIT_S: '',
-  STATE_ABOUT: '',
-  STATE_QUESTION: '',
-  STATE_TEAMS: '',
-  STATE_TEAM_DETAIL: '',
-  STATE_REVIEW: '',
-  STATE_APPLIED: ''
+  [INIT_S]: '',
+  [STATE_ABOUT]: '',
+  [STATE_QUESTION]: '',
+  [STATE_TEAMS]: '',
+  [STATE_TEAM_DETAIL]: '',
+  [STATE_REVIEW]: '',
+  [STATE_APPLIED]: '['
 };
 
 /** @type ActionFactory*/
@@ -96,136 +120,139 @@ function identity(model, eventData, settings) {
   }
 }
 
+// Guards
+export const isStepAbout = isStep(STEP_ABOUT);
+export const isStepQuestion = isStep(STEP_QUESTION);
+export const isStepTeams = isStep(STEP_TEAMS);
+export const isStepReview = isStep(STEP_REVIEW);
+
 /** @type Array<Transition>*/
-  // TODO : in actions, do not forgt the rendering of the screen!! cf. entry components
 const transitionsWithoutRenderActions = [
-    { from: INIT_STATE, event: INIT_EVENT, guards: [{ predicate: T, to: INIT_S, action: identity }] },
-    {
-      from: INIT_S, event: FETCH_EV, guards: [
-        { predicate: hasApplied, to: STATE_REVIEW, action: initializeModelAndStepReview },
-        { predicate: isStep(STEP_ABOUT), to: STATE_ABOUT, action: initializeModel },
-        { predicate: isStep(STEP_QUESTION), to: STATE_QUESTION, action: initializeModel },
-        { predicate: isStep(STEP_TEAMS), to: STATE_TEAMS, action: initializeModel },
-        { predicate: isStep(STEP_REVIEW), to: STATE_REVIEW, action: initializeModel },
-      ]
-    },
-    {
-      from: STATE_ABOUT, event: ABOUT_CONTINUE, guards: [
-        {
-          predicate: both(isFormValid, complement(hasReachedReviewStep)),
-          to: STATE_QUESTION,
-          action: updateUserAppAndRenderQuestionStep
-        },
-        {
-          predicate: both(isFormValid, hasReachedReviewStep),
-          to: STATE_REVIEW,
-          action: updateUserAppAndRenderReviewStep
-        },
-        {
-          predicate: T,
-          to: STATE_ABOUT,
-          action: updateModelWithAboutStepValidationMessages
-        }
-      ]
-    },
-    {
-      from: STATE_QUESTION, event: QUESTION_CONTINUE, guards: [
-        {
-          predicate: both(isFormValid, complement(hasReachedReviewStep)),
-          to: STATE_TEAMS,
-          action: updateUserAppAndRenderTeamsStepT
-        },
-        {
-          predicate: both(isFormValid, hasReachedReviewStep),
-          to: STATE_REVIEW,
-          action: updateUserAppAndRenderReviewStepR
-        },
-        {
-          predicate: T,
-          to: STATE_QUESTION,
-          action: updateModelWithQuestionValidationMessages
-        }
-      ]
-    },
-    {
-      from: STATE_TEAMS,
-      event: TEAM_CLICKED,
-      guards: [{ predicate: T, to: STATE_TEAM_DETAIL, action: updateModelWithSelectedTeamData }]
-    },
-    {
-      from: STATE_TEAM_DETAIL,
-      event: SKIP_TEAM_CLICKED,
-      guards: [{ predicate: T, to: STATE_TEAM_DETAIL, action: updateModelWithSkippedTeamData }]
-    },
-    {
-      from: STATE_TEAM_DETAIL,
-      event: JOIN_OR_UNJOIN_TEAM_CLICKED,
-      guards: [
-        { predicate: isFormValid, to: STATE_TEAM_DETAIL, action: updateModelWithJoinedOrUnjoinedTeamData },
-        { predicate: T, to: STATE_TEAM_DETAIL, action: updateModelWithTeamDetailValidationMessages }
-      ]
-    },
-    {
-      from: STATE_TEAM_DETAIL,
-      event: BACK_TEAM_CLICKED,
-      guards: [{ predicate: T, to: STATE_TEAMS, action: updateModelWithTeamDetailAnswerAndNextStep }]
-    },
-    {
-      from: STATE_TEAMS,
-      event: TEAM_CONTINUE,
-      guards: [
-        {
-          predicate: hasJoinedAtLeastOneTeam,
-          to: STATE_REVIEW,
-          action: updateUserAppWithHasReviewed
-        },
-        { predicate: T, to: STATE_TEAM_DETAIL, action: updateModelWithStepAndHasReviewed }
-      ]
-    },
-    {
-      from: STATE_REVIEW,
-      event: CHANGE_ABOUT,
-      guards: [
-        { predicate: T, to: STATE_ABOUT, action: updateModelWithStepOnly(STEP_ABOUT) },
-      ]
-    },
-    {
-      from: STATE_REVIEW,
-      event: CHANGE_QUESTION,
-      guards: [
-        { predicate: T, to: STATE_QUESTION, action: updateModelWithStepOnly(STEP_QUESTION) },
-      ]
-    },
-    {
-      from: STATE_REVIEW,
-      event: CHANGE_TEAMS,
-      guards: [
-        { predicate: T, to: STATE_TEAMS, action: updateModelWithStepOnly(STEP_TEAMS) },
-      ]
-    },
-    {
-      from: STATE_REVIEW,
-      event: APPLICATION_COMPLETED,
-      guards: [
-        {
-          predicate: T,
-          to: STATE_REVIEW,
-          action: updateUserAppWithHasApplied
-        },
-      ]
-    },
-  ];
+  { from: INIT_STATE, event: INIT_EVENT, guards: [{ predicate: T, to: INIT_S, action: identity }] },
+  {
+    from: INIT_S, event: FETCH_EV, guards: [
+      { predicate: hasApplied, to: STATE_REVIEW, action: initializeModelAndStepReview },
+      { predicate: isStepAbout, to: STATE_ABOUT, action: initializeModel },
+      { predicate: isStepQuestion, to: STATE_QUESTION, action: initializeModel },
+      { predicate: isStepTeams, to: STATE_TEAMS, action: initializeModel },
+      { predicate: isStepReview, to: STATE_REVIEW, action: initializeModel },
+    ]
+  },
+  {
+    from: STATE_ABOUT, event: ABOUT_CONTINUE, guards: [
+      {
+        predicate: both(isFormValid, complement(hasReachedReviewStep)),
+        to: STATE_QUESTION,
+        action: updateUserAppAndRenderQuestionStep
+      },
+      {
+        predicate: both(isFormValid, hasReachedReviewStep),
+        to: STATE_REVIEW,
+        action: updateUserAppAndRenderReviewStep
+      },
+      {
+        predicate: T,
+        to: STATE_ABOUT,
+        action: updateModelWithAboutStepValidationMessages
+      }
+    ]
+  },
+  {
+    from: STATE_QUESTION, event: QUESTION_CONTINUE, guards: [
+      {
+        predicate: both(isFormValid, complement(hasReachedReviewStep)),
+        to: STATE_TEAMS,
+        action: updateUserAppAndRenderTeamsStepT
+      },
+      {
+        predicate: both(isFormValid, hasReachedReviewStep),
+        to: STATE_REVIEW,
+        action: updateUserAppAndRenderReviewStepR
+      },
+      {
+        predicate: T,
+        to: STATE_QUESTION,
+        action: updateModelWithQuestionValidationMessages
+      }
+    ]
+  },
+  {
+    from: STATE_TEAMS,
+    event: TEAM_CLICKED,
+    guards: [{ predicate: T, to: STATE_TEAM_DETAIL, action: updateModelWithSelectedTeamData }]
+  },
+  {
+    from: STATE_TEAM_DETAIL,
+    event: SKIP_TEAM_CLICKED,
+    guards: [{ predicate: T, to: STATE_TEAM_DETAIL, action: updateModelWithSkippedTeamData }]
+  },
+  {
+    from: STATE_TEAM_DETAIL,
+    event: JOIN_OR_UNJOIN_TEAM_CLICKED,
+    guards: [
+      { predicate: isFormValid, to: STATE_TEAM_DETAIL, action: updateModelWithJoinedOrUnjoinedTeamData },
+      { predicate: T, to: STATE_TEAM_DETAIL, action: updateModelWithTeamDetailValidationMessages }
+    ]
+  },
+  {
+    from: STATE_TEAM_DETAIL,
+    event: BACK_TEAM_CLICKED,
+    guards: [{ predicate: T, to: STATE_TEAMS, action: updateModelWithTeamDetailAnswerAndNextStep }]
+  },
+  {
+    from: STATE_TEAMS,
+    event: TEAM_CONTINUE,
+    guards: [
+      {
+        predicate: hasJoinedAtLeastOneTeam,
+        to: STATE_REVIEW,
+        action: updateUserAppWithHasReviewed
+      },
+      { predicate: T, to: STATE_TEAM_DETAIL, action: updateModelWithStepAndHasReviewed }
+    ]
+  },
+  {
+    from: STATE_REVIEW,
+    event: CHANGE_ABOUT,
+    guards: [
+      { predicate: T, to: STATE_ABOUT, action: updateModelWithStepOnly(STEP_ABOUT) },
+    ]
+  },
+  {
+    from: STATE_REVIEW,
+    event: CHANGE_QUESTION,
+    guards: [
+      { predicate: T, to: STATE_QUESTION, action: updateModelWithStepOnly(STEP_QUESTION) },
+    ]
+  },
+  {
+    from: STATE_REVIEW,
+    event: CHANGE_TEAMS,
+    guards: [
+      { predicate: T, to: STATE_TEAMS, action: updateModelWithStepOnly(STEP_TEAMS) },
+    ]
+  },
+  {
+    from: STATE_REVIEW,
+    event: APPLICATION_COMPLETED,
+    guards: [
+      {
+        predicate: T,
+        to: STATE_REVIEW,
+        action: updateUserAppWithHasApplied
+      },
+    ]
+  },
+];
 
 const entryActions = {
-  // TODO : associate {DOM : {vTree}} output to given state
-  // TODO could be joined in states if I ever wanted to support directly entry actions in this version... to think about
-  INIT_S: renderInitScreen, // TODO :Remove from INIT_S transition and test if decroation works with identity action!!
-  STATE_ABOUT: renderAboutScreen,
-  STATE_QUESTION: renderQuestionScreen,
-  STATE_TEAMS: renderTeamScreen,
-  STATE_TEAM_DETAIL: renderTeamDetailScreen,
-  STATE_REVIEW: renderReviewScreen,
-  STATE_APPLIED: renderAppliedScreen
+  [INIT_S]: renderInitScreen,
+  [STATE_ABOUT]: renderAboutScreen,
+  [STATE_QUESTION]: renderQuestionScreen,
+  [STATE_TEAMS]: renderTeamScreen,
+  [STATE_TEAM_DETAIL]: renderTeamDetailScreen,
+  [STATE_REVIEW]: renderReviewScreen,
+  [STATE_APPLIED]: renderAppliedScreen
 };
 
 export const transitions =

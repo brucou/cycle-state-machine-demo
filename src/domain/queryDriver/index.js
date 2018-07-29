@@ -1,5 +1,7 @@
-import { Observable as $ } from "rx"
+import Rx from 'rxjs/Rx';
 import { tryCatch } from 'ramda';
+
+const $ = Rx.Observable;
 
 // Helper functions
 function errorHandler(e, repository, params) {
@@ -17,10 +19,11 @@ function errorHandler(e, repository, params) {
  * The configuration object maps a context to a function which receives a query and
  * returns a stream of data matching that query.
  * @param repository
- * @param config
+ * @param settings
  * @returns
  */
-export function makeDomainQueryDriver(repository, config) {
+export function makeDomainQueryDriver(repository, settings) {
+  const {config} = settings;
   return function (sink) {
     // not used, this is a read-only driver
     void sink;

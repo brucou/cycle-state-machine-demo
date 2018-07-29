@@ -1,7 +1,5 @@
 import { cond, curry, gt, isEmpty, length, mapObjIndexed, pipe, T } from 'ramda';
-import {
-  FIELD_MIN_LENGTH, MANDATORY_PLEASE_FILL_IN_VALID_ERROR, MIN_LENGTH_VALID_ERROR
-} from "./properties"
+import { FIELD_MIN_LENGTH, MANDATORY_PLEASE_FILL_IN_VALID_ERROR, MIN_LENGTH_VALID_ERROR } from "./properties"
 
 //////
 // Form data validation
@@ -15,12 +13,10 @@ function pleaseMinLength() {
 }
 
 // Helper functions
-
-function _validateScreenFields(validationSpecs, formData) {
-  return mapObjIndexed((value, key) => validationSpecs[key](value))(formData)
-}
-
-export const validateScreenFields = curry(_validateScreenFields);
+export const validateScreenFields = curry(function validateScreenFields(validationSpecs, formData) {
+    return mapObjIndexed((value, key) => validationSpecs[key](value))(formData)
+  }
+);
 
 // About screen validation
 const validateSuperPower = cond([[isEmpty, pleaseFillFieldIn], [T, T]]);

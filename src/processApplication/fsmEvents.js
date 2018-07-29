@@ -1,22 +1,18 @@
 import { all, any, complement, curry, isNil, keys, pipe, values } from 'ramda';
+import { getAboutFormData, getQuestionFormData, getTeamDetailFormData } from './fetch';
 import {
-  getAboutFormData, getQuestionFormData, getTeamDetailFormData
-} from './processApplicationFetch';
-import {
-  aboutScreenFieldValidationSpecs, questionScreenFieldValidationSpecs,
-  teamDetailScreenFieldValidationSpecs, validateScreenFields
+  aboutScreenFieldValidationSpecs, questionScreenFieldValidationSpecs, teamDetailScreenFieldValidationSpecs,
+  validateScreenFields
 } from './formValidation';
 import {
-  STEP_ABOUT, STEP_REVIEW, USER_APPLICATION_ABOUT_CONTINUE_BUTTON_SELECTOR,
-  USER_APPLICATION_BACK_TO_TEAMS_SELECTOR, USER_APPLICATION_JOIN_UNJOIN_TEAM_SELECTOR,
+  STEP_ABOUT, STEP_REVIEW, USER_APPLICATION_ABOUT_CONTINUE_BUTTON_SELECTOR, USER_APPLICATION_BACK_TO_TEAMS_SELECTOR,
+  USER_APPLICATION_JOIN_UNJOIN_TEAM_SELECTOR, USER_APPLICATION_QUESTION_CONTINUE_BUTTON_SELECTOR,
   USER_APPLICATION_REVIEW_ABOUT_SELECTOR, USER_APPLICATION_REVIEW_OPP_QUESTION_SELECTOR,
-  USER_APPLICATION_REVIEW_SUBMIT_SELECTOR, USER_APPLICATION_REVIEW_TEAMS_SELECTOR,
-  USER_APPLICATION_SKIP_TEAM_SELECTOR, USER_APPLICATION_TEAM_CONTINUE_BUTTON_SELECTOR,
-  USER_APPLICATION_TEAMLIST_SELECTOR
+  USER_APPLICATION_REVIEW_SUBMIT_SELECTOR, USER_APPLICATION_REVIEW_TEAMS_SELECTOR, USER_APPLICATION_SKIP_TEAM_SELECTOR,
+  USER_APPLICATION_TEAM_CONTINUE_BUTTON_SELECTOR, USER_APPLICATION_TEAMLIST_SELECTOR
 } from './properties';
 import { isBoolean } from "@rxcc/contracts"
 import { preventDefault } from "../helpers"
-import { USER_APPLICATION_QUESTION_CONTINUE_BUTTON_SELECTOR } from "./properties/index"
 
 ///////
 // Events
@@ -29,9 +25,8 @@ export function aboutContinueEventFactory(sources, settings) {
   void settings;
 
   return sources.DOM.select(USER_APPLICATION_ABOUT_CONTINUE_BUTTON_SELECTOR).events('click')
-    .tap(preventDefault)
-    .map((x) => {``
-      void x;
+    .do(preventDefault)
+    .map((x) => {
       const formData = getAboutFormData(sources.document);
 
       return {
@@ -46,8 +41,8 @@ export function questionContinueEventFactory(sources, settings) {
   void settings;
 
   return sources.DOM.select(USER_APPLICATION_QUESTION_CONTINUE_BUTTON_SELECTOR).events('click')
-    .tap(preventDefault)
-    .tap(console.warn.bind(console, 'submit button clicked'))
+    .do(preventDefault)
+    .do(console.warn.bind(console, 'submit button clicked'))
     .map((x) => {
       void x;
       const formData = getQuestionFormData(sources.document);
@@ -57,7 +52,7 @@ export function questionContinueEventFactory(sources, settings) {
         validationData: validateScreenFields(questionScreenFieldValidationSpecs, formData)
       }
     })
-    .tap(console.warn.bind(console, 'validation Question fields performed'))
+    .do(console.warn.bind(console, 'validation Question fields performed'))
 }
 
 // @returns Stream<Number> returns the index of the team which has been clicked or throws
@@ -65,8 +60,8 @@ export function teamClickedEventFactory(sources, settings) {
   void settings;
 
   return sources.DOM.select(USER_APPLICATION_TEAMLIST_SELECTOR).events('click')
-    .tap(preventDefault)
-    .tap(console.warn.bind(console, 'team list area clicked'))
+    .do(preventDefault)
+    .do(console.warn.bind(console, 'team list area clicked'))
     .map((e) => {
       const target = e.target;
       const elIndex = target.getAttribute('data-index');
@@ -79,21 +74,21 @@ export function teamClickedEventFactory(sources, settings) {
     // it can happen that the click is on the div but not on a data-index element => elIndex = null
     // Note that isNil is used and not identity, otherwise elIndex = 0 would be filtered out
     .filter(complement(isNil))
-    .tap(console.warn.bind(console, 'team index'))
+    .do(console.warn.bind(console, 'team index'))
 }
 
 export function teamContinueEventFactory(sources, settings) {
   void settings;
 
   return sources.DOM.select(USER_APPLICATION_TEAM_CONTINUE_BUTTON_SELECTOR).events('click')
-    .tap(preventDefault)
+    .do(preventDefault)
 }
 
 export function skipTeamClickedEventFactory(sources, settings) {
   void settings;
 
   return sources.DOM.select(USER_APPLICATION_SKIP_TEAM_SELECTOR).events('click')
-    .tap(preventDefault)
+    .do(preventDefault)
     .map((x) => ({ formData: getTeamDetailFormData(sources.document) }))
 }
 
@@ -101,7 +96,7 @@ export function joinTeamClickedEventFactory(sources, settings) {
   void settings;
 
   return sources.DOM.select(USER_APPLICATION_JOIN_UNJOIN_TEAM_SELECTOR).events('click')
-    .tap(preventDefault)
+    .do(preventDefault)
     .map((x) => {
       void x;
       const formData = getTeamDetailFormData(sources.document);
@@ -117,7 +112,7 @@ export function backTeamClickedEventFactory(sources, settings) {
   void settings;
 
   return sources.DOM.select(USER_APPLICATION_BACK_TO_TEAMS_SELECTOR).events('click')
-    .tap(preventDefault)
+    .do(preventDefault)
     .map(ev => getTeamDetailFormData(sources.document))
 }
 
@@ -125,28 +120,28 @@ export function changeAboutEventFactory(sources, settings) {
   void settings;
 
   return sources.DOM.select(USER_APPLICATION_REVIEW_ABOUT_SELECTOR).events('click')
-    .tap(preventDefault)
+    .do(preventDefault)
 }
 
 export function changeQuestionEventFactory(sources, settings) {
   void settings;
 
   return sources.DOM.select(USER_APPLICATION_REVIEW_OPP_QUESTION_SELECTOR).events('click')
-    .tap(preventDefault)
+    .do(preventDefault)
 }
 
 export function changeTeamsEventFactory(sources, settings) {
   void settings;
 
   return sources.DOM.select(USER_APPLICATION_REVIEW_TEAMS_SELECTOR).events('click')
-    .tap(preventDefault)
+    .do(preventDefault)
 }
 
 export function applicationCompletedEventFactory(sources, settings) {
   void settings;
 
   return sources.DOM.select(USER_APPLICATION_REVIEW_SUBMIT_SELECTOR).events('click')
-    .tap(preventDefault)
+    .do(preventDefault)
 }
 
 ///////
@@ -195,6 +190,7 @@ export const isStep = curry(_isStepX);
 
 export function isFormValid(model, eventData) {
   void model;
+
   return pipe(values, all(isBoolean))(eventData.validationData)
 }
 

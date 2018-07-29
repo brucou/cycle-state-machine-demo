@@ -5,11 +5,12 @@ import { mapObjIndexed, mergeAll, pipe, values } from 'ramda'
  * allowing to derive a merge (monoidal concat) operation.
  * @param {Array<Output>} arrayOutputs
  */
-export function mergeOutputFn(arrayOutputs){
+export function mergeOutputFn(arrayOutputs) {
   // NOTE : that will work when all outputs are for different sinks
   // of outputs with same sinks only the last one will be kept.
   // That is ok for this demo. A fuller version would agregate the
   // same sinks value in an array
+  debugger
   return mergeAll(arrayOutputs)
 }
 
@@ -35,4 +36,21 @@ export function getSelectedKey(latestTeamIndex, teamKeys) {
 
 export function preventDefault(ev) {
   if (ev) ev.preventDefault();
+}
+
+export function rxEmitterFactory(Rx) {
+  return function () {
+    const coreEmitter = new Rx.Subject();
+
+    if (coreEmitter.next) {
+      return {
+        onNext: coreEmitter.next.bind(coreEmitter),
+        onError: coreEmitter.error.bind(coreEmitter),
+        onComplete: coreEmitter.complete.bind(coreEmitter)
+      }
+    }
+    else {
+      return coreEmitter
+    }
+  }
 }

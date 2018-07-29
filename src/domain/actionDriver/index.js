@@ -1,5 +1,5 @@
 import { mapObjIndexed, tryCatch, values } from 'ramda';
-import * as Rx from "rx"
+import Rx from 'rxjs/Rx';
 
 const $ = Rx.Observable;
 
@@ -19,12 +19,6 @@ function isError(obj) {
   return obj instanceof Error
 }
 
-function eventEmitterFactory(_, context, __) {
-  void _, context, __;
-
-  return new Rx.Subject()
-}
-
 /**
  * Driver factory which takes a configuration object and returns a driver.
  * The returned driver will be handling action requests arriving on its input stream (sink) via:
@@ -34,11 +28,12 @@ function eventEmitterFactory(_, context, __) {
  *   + repository : enclose API allowing to use a specific data repository
  *   + context : passed back for reference to the callback function
  * @param repository
- * @param config
+ * @param settings
  */
-export function makeDomainActionDriver(repository, config) {
+export function makeDomainActionDriver(repository, settings) {
+  const { emitterFactory, config } = settings;
   // Create a subject for each context defined in config
-  const eventEmitters = mapObjIndexed(eventEmitterFactory, config);
+  const eventEmitters = mapObjIndexed(emitterFactory, config);
 
   return function (sink$) {
     const source$ = sink$.map(function executeAction(action) {

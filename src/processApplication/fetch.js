@@ -1,11 +1,13 @@
 import { OPPORTUNITY, PROJECTS, TEAMS, USER_APPLICATION } from '../domain';
-import { Observable as $ } from "rx";
+import Rx from 'rxjs/Rx';
 import {
   USER_APPLICATION_FORM_INPUT_BIRTHDAY_SELECTOR, USER_APPLICATION_FORM_INPUT_LEGAL_NAME_SELECTOR,
   USER_APPLICATION_FORM_INPUT_OPP_ANSWER_SELECTOR, USER_APPLICATION_FORM_INPUT_PHONE_SELECTOR,
   USER_APPLICATION_FORM_INPUT_PREFERRED_NAME_SELECTOR, USER_APPLICATION_FORM_INPUT_SUPERPOWER_SELECTOR,
   USER_APPLICATION_FORM_INPUT_TEAM_ANSWER_SELECTOR, USER_APPLICATION_FORM_INPUT_ZIPCODE_SELECTOR
 } from "./properties"
+
+const $ = Rx.Observable;
 
 export function getInputValue(document, sel) {
   const el = document.querySelector(sel);
@@ -56,7 +58,6 @@ export function fetchProject(domainQuery, projectKey) {
 }
 
 export function fetchUserApplicationModelData(sources, settings) {
-  // TODO : beware that now we still have the settings but not sourcs, settings signature
   const { user$, domainQuery } = sources;
   const { opportunityKey, userKey, projectKey } = settings;
 
@@ -82,10 +83,10 @@ export function fetchUserApplicationModelData(sources, settings) {
       })
   )
   // NOTE : that is done later in the end (in the guard) : TODO : think : better here?
-    // .map(model => {
-    //   return model.userApplication
-    //     ? model
-    //     : emptyUserApplication
-    // })
+  // .map(model => {
+  //   return model.userApplication
+  //     ? model
+  //     : emptyUserApplication
+  // })
     .take(1)
 }

@@ -4,8 +4,8 @@ import { DOMAIN_ACTION, STEP_ABOUT, STEP_QUESTION, STEP_REVIEW, STEP_TEAM_DETAIL
 import {
   updateModelWithAboutDataAndStepQuestion, updateModelWithAboutDataAndStepReview, updateModelWithAppliedData,
   updateModelWithQuestionDataAndStepReview, updateModelWithQuestionDataAndTeamsStep
-} from "./processApplicationModelUpdates"
-import { decorateWithEntryActions, mergeActionFactories as _mergeActionFactories, NO_OUTPUT } from 'state-transducer';
+} from "./modelUpdates"
+import { decorateWithEntryActions, mergeActionFactories as _mergeActionFactories, NO_OUTPUT } from '../../../state-transducer/src';
 import { mergeOutputFn } from "../helpers"
 
 
@@ -125,9 +125,8 @@ export function makeRequestToUpdateUserApplicationWithHasApplied(model, eventDat
 // Actions
 export const updateUserAppAndRenderQuestionStep = mergeActionFactories([makeRequestToUpdateUserApplication(STEP_QUESTION), updateModelWithAboutDataAndStepQuestion]);
 export const updateUserAppAndRenderReviewStep = mergeActionFactories([makeRequestToUpdateUserApplication(STEP_REVIEW), updateModelWithAboutDataAndStepReview])
-export const updateUserAppAndRenderTeamsStepT = mergeActionFactories(makeRequestToUpdateUserApplication(STEP_TEAMS), updateModelWithQuestionDataAndTeamsStep);
+export const updateUserAppAndRenderTeamsStepT = mergeActionFactories([makeRequestToUpdateUserApplication(STEP_TEAMS), updateModelWithQuestionDataAndTeamsStep]);
 export const updateUserAppAndRenderReviewStepR = mergeActionFactories([makeRequestToUpdateUserApplication(STEP_REVIEW), updateModelWithQuestionDataAndStepReview]);
 export const updateUserAppWithHasReviewed = mergeActionFactories([makeRequestToUpdateUserApplicationWithHasReviewed, updateModelWithQuestionDataAndStepReview]);
 export const updateUserAppWithHasApplied = mergeActionFactories([makeRequestToUpdateUserApplicationWithHasApplied, updateModelWithAppliedData]);
-
 

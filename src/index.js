@@ -1,21 +1,34 @@
 // Core
+import Rx from 'rxjs/Rx'
 import { run } from '@cycle/rxjs-run'
 import { makeDOMDriver } from '@cycle/dom'
 import { App } from './app'
-import * as localForage from "localforage";
+import localForage from "localforage";
 // domain
 import { makeDomainActionDriver } from './domain/actionDriver';
 import { makeDomainQueryDriver } from './domain/queryDriver';
 import { domainActionsConfig, domainObjectsQueryMap } from './domain/index';
 // fixtures
 import { defaultUser, loadTestData } from '../fixtures';
+import { rxEmitterFactory } from "./helpers"
 
 const repository = localForage;
+const $ = Rx.Observable;
+const drivers = {
+  DOM: makeDOMDriver('#root'),
+  user$: makeFakeUserDriver(defaultUser),
+  domainQuery: makeDomainQueryDriver(repository, { config: domainObjectsQueryMap }),
+  domainAction$: makeDomainActionDriver(repository, {
+    emitterFactory: rxEmitterFactory(Rx),
+    config: domainActionsConfig
+  }),
+  document: documentDriver,
+};
 
 function makeFakeUserDriver(user) {
   return function fakeUserDriver() {
     // read-only driver, so no need for sink input parameter here
-    return $.just(user)
+    return $.of(user)
   }
 }
 
@@ -44,14 +57,6 @@ Promise.resolve()
   .then(x => console.debug(`localForage prerun:`, x))
   .then(() => loadTestData(localForage))
   .then(() => {
-    const drivers = {
-      DOM: makeDOMDriver('#root'),
-      user$: makeFakeUserDriver(defaultUser),
-      domainQuery: makeDomainQueryDriver(repository, domainObjectsQueryMap),
-      domainAction$: makeDomainActionDriver(repository, domainActionsConfig),
-      document: documentDriver,
-    };
-
     run(App, drivers);
   })
   .catch(function (err) {

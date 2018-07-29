@@ -4,7 +4,6 @@ import {
 } from './properties';
 import { curry } from "ramda"
 import { isBoolean } from "@rxcc/contracts"
-import { a, div, i, p } from "@cycle/dom/lib/index"
 
 
 /////////////////
