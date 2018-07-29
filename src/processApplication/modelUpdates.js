@@ -83,7 +83,6 @@ export const initializeModelAndStepReview = mergeModelUpdates([
 
 function _updateModelWithStepAndError(updateModelFn, step, model,
                                       eventData, actionResponse) {
-  console.log('_updateModelWithStepAndError');
   const { err } = actionResponse;
 
   return flatten([
@@ -108,7 +107,6 @@ export const updateModelWithAboutDataAndStepReview = mergeModelUpdates([
 ]);
 
 export function updateModelWithAboutData(model, eventData) {
-  console.log('updateModelWithAboutData');
   const formData = eventData.formData;
 
   return {
@@ -120,15 +118,12 @@ export function updateModelWithAboutData(model, eventData) {
 }
 
 export function updateModelWithEmptyErrorMessages(model, eventData) {
-  console.log('updateModelWithEmptyErrorMessages');
-
   return {
     model_update: flatten([toJsonPatch('/validationMessages')({}), toJsonPatch('/errorMessage')(null)])
   }
 }
 
 export function updateModelWithQuestionDataAndStepReview(model, eventData) {
-  console.log('updateModelWithQuestionDataAndStepReview');
   const formData = eventData.formData;
 
   return {
@@ -140,7 +135,6 @@ export function updateModelWithQuestionDataAndStepReview(model, eventData) {
 }
 
 export function updateModelWithQuestionData(model, eventData) {
-  console.log('updateModelWithQuestionData');
   const formData = eventData.formData;
 
   return {
@@ -166,8 +160,6 @@ function patchModelWithQuestionData(formData) {
 export function updateModelWithSelectedTeamData(model, eventData) {
   const selectedTeamIndex = eventData;
 
-  console.log('updateModelWithSelectedTeamData', eventData);
-
   return {
     model_update: flatten([
       addOpToJsonPatch('/userApplication/progress/latestTeamIndex', selectedTeamIndex),
@@ -184,8 +176,6 @@ export function updateModelWithSkippedTeamData(model, eventData) {
   const { formData: { answer } } = eventData;
   // loop back to first team if met end of teams
   const nextTeamIndex = (latestTeamIndex + 1) % numberOfTeams;
-
-  console.log('updateModelWithSkippedTeamData', latestTeamIndex, selectedTeamKey, nextTeamIndex, answer);
 
   return {
     model_update: flatten([
@@ -206,8 +196,6 @@ export function updateModelWithJoinedOrUnjoinedTeamData(model, eventData) {
   const { hasBeenJoined } = teams[selectedTeamKey];
   // loop back to first team if met end of teams
   const nextTeamIndex = (latestTeamIndex + 1) % numberOfTeams;
-
-  console.log('updateModelWithJoinedTeamData', latestTeamIndex, nextTeamIndex, selectedTeamKey, hasBeenJoined);
 
   return {
     model_update: flatten([
@@ -242,7 +230,6 @@ export function updateModelWithAppliedData(model, eventData) {
 
 function updateModelWithValidationData(model, eventData) {
   const { validationData } = eventData;
-  console.log('updateModelWithValidationData', validationData);
 
   return {
     model_update: toJsonPatch('/validationMessages')(validationData)
@@ -254,8 +241,6 @@ function updateModelWithTeamDetailAnswerData(model, eventData) {
   const teamKeys = keys(teams);
   const selectedTeamKey = getSelectedKey(latestTeamIndex, teamKeys);
   const { answer } = eventData;
-
-  console.log('updateModelWithTeamDetailAnswerData', latestTeamIndex, selectedTeamKey, answer);
 
   return {
     model_update: flatten([

@@ -33,8 +33,6 @@ export function renderAboutScreen(model, eventData, settings) {
   const projectDate = date;
   const projectName = name;
 
-  console.log('renderApplicationProcessAbout > form data', superPower, legalName, preferredName, phone, birthday, zipCode);
-  console.log('renderApplicationProcessAbout > validation', validationMessages);
   const _makeErrDiv = makeErrDiv(validationMessages);
   const divErrorMessage = errorMessage
     ? div('.c-application__error', `An error occurred : ${errorMessage}`)

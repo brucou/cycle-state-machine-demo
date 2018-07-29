@@ -31,8 +31,6 @@ export function renderTeamScreen(model) {
     return teams[teamKey].hasBeenJoined
   }, keys(teams)) ? '.disabled' : '';
 
-  console.log('renderTeamScreen > continue button disabled', disabledSelector);
-
   const divErrorMessage = errorMessage
     ? div('.c-application__error', `An error occurred : ${errorMessage}`)
     : div('.c-application__error', '');

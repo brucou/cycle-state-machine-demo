@@ -1,6 +1,10 @@
 import { both, complement, T } from 'ramda';
-import { decorateWithEntryActions, INIT_EVENT, INIT_STATE, NO_OUTPUT } from '../../../state-transducer/src'
-import { STEP_ABOUT, STEP_QUESTION, STEP_REVIEW, STEP_TEAMS } from './properties';
+import { decorateWithEntryActions, identity, INIT_EVENT, INIT_STATE } from '../../../state-transducer/src'
+import {
+  ABOUT_CONTINUE, APPLICATION_COMPLETED, BACK_TEAM_CLICKED, CHANGE_ABOUT, CHANGE_QUESTION, CHANGE_TEAMS, FETCH_EV,
+  INIT_S, JOIN_OR_UNJOIN_TEAM_CLICKED, QUESTION_CONTINUE, SKIP_TEAM_CLICKED, STATE_ABOUT, STATE_APPLIED, STATE_QUESTION,
+  STATE_REVIEW, STATE_TEAM_DETAIL, STATE_TEAMS, STEP_ABOUT, STEP_QUESTION, STEP_TEAMS, TEAM_CLICKED, TEAM_CONTINUE
+} from './properties';
 import {
   updateUserAppAndRenderQuestionStep, updateUserAppAndRenderReviewStep, updateUserAppAndRenderReviewStepR,
   updateUserAppAndRenderTeamsStepT, updateUserAppWithHasApplied, updateUserAppWithHasReviewed
@@ -14,8 +18,8 @@ import {
 import {
   aboutContinueEventFactory, applicationCompletedEventFactory, backTeamClickedEventFactory, changeAboutEventFactory,
   changeQuestionEventFactory, changeTeamsEventFactory, hasApplied, hasJoinedAtLeastOneTeam, hasReachedReviewStep,
-  isFormValid, isStep, joinTeamClickedEventFactory, questionContinueEventFactory, skipTeamClickedEventFactory,
-  teamClickedEventFactory, teamContinueEventFactory
+  isFormValid, isStepAbout, isStepQuestion, isStepReview, isStepTeams, joinTeamClickedEventFactory,
+  questionContinueEventFactory, skipTeamClickedEventFactory, teamClickedEventFactory, teamContinueEventFactory
 } from './fsmEvents';
 import { fetchUserApplicationModelData } from './fetch';
 import { renderInitScreen } from "./renderInitScreen";
@@ -26,30 +30,6 @@ import { renderQuestionScreen } from "./renderQuestionScreen"
 import { renderTeamScreen } from "./renderTeamsScreen"
 import { renderTeamDetailScreen } from "./renderTeamDetailScreen"
 import { renderReviewScreen } from "./renderReviewScreen"
-
-// Control states monikers
-// DOC must be idenifier for functions, so no spaces!!
-const INIT_S = 'INIT_S';
-const STATE_ABOUT = 'About';
-const STATE_QUESTION = 'Question';
-const STATE_TEAMS = 'Teams';
-const STATE_TEAM_DETAIL = 'Team_Detail';
-const STATE_REVIEW = 'Review';
-const STATE_APPLIED = 'State_Applied';
-
-// Events' moniker
-const FETCH_EV = 'fetch';
-const ABOUT_CONTINUE = 'about_continue';
-const QUESTION_CONTINUE = 'question_continue';
-const TEAM_CLICKED = 'team_clicked';
-const SKIP_TEAM_CLICKED = 'skip_team_clicked';
-const JOIN_OR_UNJOIN_TEAM_CLICKED = 'join_team_clicked';
-const BACK_TEAM_CLICKED = 'back_team_clicked';
-const TEAM_CONTINUE = 'team_continue';
-const CHANGE_ABOUT = 'change_about';
-const CHANGE_QUESTION = 'change_question';
-const CHANGE_TEAMS = 'change_teams';
-const APPLICATION_COMPLETED = 'application_completed';
 
 // ADR : state machine design
 // A possible design is to have all the `Continue` button click modelized by the same event in the state machine.
@@ -111,20 +91,6 @@ export const states = {
   [STATE_REVIEW]: '',
   [STATE_APPLIED]: '['
 };
-
-/** @type ActionFactory*/
-function identity(model, eventData, settings) {
-  return {
-    model_update: [],
-    output: NO_OUTPUT
-  }
-}
-
-// Guards
-export const isStepAbout = isStep(STEP_ABOUT);
-export const isStepQuestion = isStep(STEP_QUESTION);
-export const isStepTeams = isStep(STEP_TEAMS);
-export const isStepReview = isStep(STEP_REVIEW);
 
 /** @type Array<Transition>*/
 const transitionsWithoutRenderActions = [
@@ -257,4 +223,3 @@ const entryActions = {
 
 export const transitions =
   decorateWithEntryActions(transitionsWithoutRenderActions, states, entryActions, mergeOutputFn);
-

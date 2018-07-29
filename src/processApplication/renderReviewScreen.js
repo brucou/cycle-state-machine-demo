@@ -34,8 +34,6 @@ export function renderReviewScreen(model) {
     ? div('.c-application__error', `An error occurred : ${errorMessage}`)
     : div('.c-application__error', '');
 
-  console.info('renderReviewScreen > user application', model.userApplication);
-
   return {
     output: {
       DOM: div('#page', [

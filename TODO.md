@@ -1,6 +1,10 @@
 # TODO
 - publish new version of state-transducer
-- test `decorateWithEntryActions` (think about mergeOutput)
+- bug for empty field intams ; also when trying to unjoin a team from fill to empty field, no 
+progress and no error messages displayed
+- write tests for the automata, not the streaming version, the standard version
+- so make all the scenarios
+- bug also when applying : does not progress...
 - use `concatModelUpdates, chainModelUpdates, mergeActionFactories` in ... 
 - // TODO : in actions, do not forgt the rendering of the screen!! cf. entry components
 - import in JSON

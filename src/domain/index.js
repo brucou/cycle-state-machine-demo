@@ -65,8 +65,6 @@ export const domainActionsConfig = {
       const { userKey, opportunityKey } = payload;
       const localforageKey = makeUserAppKey(USER_APPLICATION_REF, USERS_REF, userKey, OPPORTUNITY_REF, opportunityKey);
 
-      console.log('update user application:', context, localforageKey, payload);
-
       return repository.setItem(localforageKey, payload);
     }
   },

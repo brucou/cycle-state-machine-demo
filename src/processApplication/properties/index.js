@@ -1,3 +1,5 @@
+
+
 // Process application steps (UI point of view)
 export const STEP_ABOUT = 'About';
 export const STEP_QUESTION = 'Question';
@@ -72,5 +74,30 @@ export const aboutYouFields = ['superPower'];
 export const personalFields = ['birthday', 'phone', 'preferredName', 'zipCode', 'legalName'];
 export const questionFields = ['answer'];
 
+// Sinks for the application
 export const DOMAIN_ACTION= 'domainAction';
 export const DOM = 'DOM';
+
+// Control states monikers
+// DOC must be idenifier for functions, so no spaces!!
+export const INIT_S = 'INIT_S';
+export const STATE_ABOUT = 'About';
+export const STATE_QUESTION = 'Question';
+export const STATE_TEAMS = 'Teams';
+export const STATE_TEAM_DETAIL = 'Team_Detail';
+export const STATE_REVIEW = 'Review';
+export const STATE_APPLIED = 'State_Applied';
+
+// Events' moniker
+export const FETCH_EV = 'fetch';
+export const ABOUT_CONTINUE = 'about_continue';
+export const QUESTION_CONTINUE = 'question_continue';
+export const TEAM_CLICKED = 'team_clicked';
+export const SKIP_TEAM_CLICKED = 'skip_team_clicked';
+export const JOIN_OR_UNJOIN_TEAM_CLICKED = 'join_team_clicked';
+export const BACK_TEAM_CLICKED = 'back_team_clicked';
+export const TEAM_CONTINUE = 'team_continue';
+export const CHANGE_ABOUT = 'change_about';
+export const CHANGE_QUESTION = 'change_question';
+export const CHANGE_TEAMS = 'change_teams';
+export const APPLICATION_COMPLETED = 'application_completed';

@@ -3,9 +3,9 @@ import { UPDATE, USER_APPLICATION } from '../domain/index';
 import { DOMAIN_ACTION, STEP_ABOUT, STEP_QUESTION, STEP_REVIEW, STEP_TEAM_DETAIL, STEP_TEAMS, } from './properties';
 import {
   updateModelWithAboutDataAndStepQuestion, updateModelWithAboutDataAndStepReview, updateModelWithAppliedData,
-  updateModelWithQuestionDataAndStepReview, updateModelWithQuestionDataAndTeamsStep
+  updateModelWithQuestionDataAndStepReview, updateModelWithQuestionDataAndTeamsStep, updateModelWithStepAndHasReviewed
 } from "./modelUpdates"
-import { decorateWithEntryActions, mergeActionFactories as _mergeActionFactories, NO_OUTPUT } from '../../../state-transducer/src';
+import { mergeActionFactories as _mergeActionFactories } from '../../../state-transducer/src';
 import { mergeOutputFn } from "../helpers"
 
 
@@ -50,7 +50,6 @@ export function reShapeEventData(formData, step) {
 }
 
 function getUserApplicationUpdates(formData, userApplication) {
-  console.log('action_request : formData', formData);
   if (!userApplication) {
     throw 'internal error: model at this stage must have userApplication property set!';
   }
@@ -58,15 +57,12 @@ function getUserApplicationUpdates(formData, userApplication) {
   const updates = reShapeEventData(formData, step);
   let newUserApplication = merge(userApplication, updates);
 
-  console.log('getUserApplicationUpdates: step, updated user app', step, newUserApplication);
-
   return newUserApplication
 }
 
 ///////
 // Action requests
 function _makeRequestToUpdateUserApplication(nextStep, model, eventData) {
-  console.log('makeRequestToUpdateUserApplication > eventData', eventData);
   const formData = eventData.formData;
   const { userApplication } = model;
   const newUserApplication = getUserApplicationUpdates(formData, userApplication);
@@ -86,7 +82,6 @@ function _makeRequestToUpdateUserApplication(nextStep, model, eventData) {
 export const makeRequestToUpdateUserApplication = curry(_makeRequestToUpdateUserApplication)
 
 export function makeRequestToUpdateUserApplicationWithHasReviewed(model, eventData) {
-  console.log('makeRequestToUpdateUserApplicationWithHasReviewed > eventData', eventData);
   const formData = eventData.formData;
   const { userApplication } = model;
   const newUserApplication = getUserApplicationUpdates(formData, userApplication);
@@ -127,6 +122,5 @@ export const updateUserAppAndRenderQuestionStep = mergeActionFactories([makeRequ
 export const updateUserAppAndRenderReviewStep = mergeActionFactories([makeRequestToUpdateUserApplication(STEP_REVIEW), updateModelWithAboutDataAndStepReview])
 export const updateUserAppAndRenderTeamsStepT = mergeActionFactories([makeRequestToUpdateUserApplication(STEP_TEAMS), updateModelWithQuestionDataAndTeamsStep]);
 export const updateUserAppAndRenderReviewStepR = mergeActionFactories([makeRequestToUpdateUserApplication(STEP_REVIEW), updateModelWithQuestionDataAndStepReview]);
-export const updateUserAppWithHasReviewed = mergeActionFactories([makeRequestToUpdateUserApplicationWithHasReviewed, updateModelWithQuestionDataAndStepReview]);
+export const updateUserAppWithHasReviewed = mergeActionFactories([makeRequestToUpdateUserApplicationWithHasReviewed, updateModelWithStepAndHasReviewed]);
 export const updateUserAppWithHasApplied = mergeActionFactories([makeRequestToUpdateUserApplicationWithHasApplied, updateModelWithAppliedData]);
-

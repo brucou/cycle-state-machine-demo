@@ -30,8 +30,6 @@ export function renderTeamDetailScreen(model) {
   const latestTeamKey = keys(teams)[latestTeamIndex];
   const { name: teamName, description: teamDescription, question: teamQuestion, answer: teamAnswer, hasBeenJoined } = teams[latestTeamKey];
 
-  //console.log('renderTeamDetailScreen > team answer, hasBeenJoined', teamAnswer, hasBeenJoined);
-
   const divErrorMessage = errorMessage
     ? div('.c-application__error', `An error occurred : ${errorMessage}`)
     : div('.c-application__error', '');

@@ -37,7 +37,6 @@ export function makeDomainActionDriver(repository, settings) {
 
   return function (sink$) {
     const source$ = sink$.map(function executeAction(action) {
-      console.info('DOMAIN ACTION | ', action);
       const { context, command, payload } = action;
       const fnToExec = config[context][command];
       const wrappedFn = tryCatch(fnToExec, errorHandler);
@@ -74,14 +73,13 @@ export function makeDomainActionDriver(repository, settings) {
       }
     });
 
-    source$.subscribe(function (x) {console.log(`makeDomainActionDriver`, x)});
+    source$.subscribe(function (x) {});
 
     // DOC : responseSource$ will emit responses for any of the action request
     // DOC : for use cases when one wants to filter per context, `getResponse` property is added
     // DOC : returns the subject from which one can listen for responses of a given context
     const responseSource$ = $.merge(values(eventEmitters));
     responseSource$.getResponse = function getResponse(context) {
-      console.warn('getResponse', context);
       return eventEmitters[context]
     };
 

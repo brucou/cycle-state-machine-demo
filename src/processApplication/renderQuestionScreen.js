@@ -32,10 +32,6 @@ export function renderQuestionScreen(model) {
     ? div('.c-application__error', `An error occurred : ${errorMessage}`)
     : div('.c-application__error', '');
 
-  console.info('renderQuestionScreen > question', question);
-  console.log('renderQuestionScreen > answer', answer);
-  console.log('renderQuestionScreen > validation', validationMessages);
-
   return {
     output: {
       DOM: div('#page', [
