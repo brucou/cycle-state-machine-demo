@@ -9,7 +9,7 @@ const $ = Rx.Observable;
 
 // NOTE : we pass :
 // - mandatory settings specifying the reactive methods used for the streaming machine (here Rxjs bindings)
-// - other relevant data (fixures) necessary for the demo
+// - other relevant data (fixtures) necessary for the demo
 // to two destinataries :
 // - the machine itself
 // - the event factories - this was preferred for testing reasons, we thus get factories without closures
@@ -19,7 +19,7 @@ const appSettings = {
   of: $.of,
   subject_factory : () => {
     const subject = new Rx.Subject();
-    // NOTE : this is for Rxjs v4-5!! hopefully the prototype information is not needed...
+    // NOTE : this is intended for Rxjs v4-5!! but should work for most also
     subject.emit = subject.next || subject.onNext;
     return subject
   },
@@ -43,7 +43,6 @@ const fsmDef = {
 const streamingStateMachine = makeRxStreamingStateMachine(fsmDef);
 
 export function App(sources) {
-  // Build the events
   const events = mapObjIndexed((eventFactory, eventName) => {
     return eventFactory(sources, appSettings)
   }, eventsFactory);

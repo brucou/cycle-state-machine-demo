@@ -2,9 +2,10 @@ import { keys } from "ramda"
 import { a, button, div, form, i, p, textarea } from "@cycle/dom/lib/index"
 import {
   USER_APPLICATION_BACK_TO_TEAMS_SELECTOR, USER_APPLICATION_FORM_INPUT_TEAM_ANSWER_SELECTOR,
-  USER_APPLICATION_JOIN_UNJOIN_TEAM_SELECTOR, USER_APPLICATION_SKIP_TEAM_SELECTOR
+  USER_APPLICATION_JOIN_UNJOIN_TEAM_SELECTOR, USER_APPLICATION_TEAM_DETAIL_SCREEN_ANSWER_ERROR_SELECTOR,
+  USER_APPLICATION_SKIP_TEAM_SELECTOR
 } from "./properties"
-import { makeInputProps, renderHeader, renderProgressIndicator, renderTitle } from "./renderHelpers"
+import { makeErrDiv, makeInputProps, renderHeader, renderProgressIndicator, renderTitle } from "./renderHelpers"
 
 export function renderTeamDetailScreen(model) {
   const {
@@ -29,6 +30,7 @@ export function renderTeamDetailScreen(model) {
   const projectName = name;
   const latestTeamKey = keys(teams)[latestTeamIndex];
   const { name: teamName, description: teamDescription, question: teamQuestion, answer: teamAnswer, hasBeenJoined } = teams[latestTeamKey];
+  const _makeErrDiv = makeErrDiv(validationMessages);
 
   const divErrorMessage = errorMessage
     ? div('.c-application__error', `An error occurred : ${errorMessage}`)
@@ -69,7 +71,8 @@ export function renderTeamDetailScreen(model) {
                   "placeholder": "Please enter your answer here"
                 },
                 "props": makeInputProps(teamAnswer)
-              })
+              }),
+              _makeErrDiv('answer', USER_APPLICATION_TEAM_DETAIL_SCREEN_ANSWER_ERROR_SELECTOR)
             ])
           ])
         ]),

@@ -35,6 +35,7 @@ export const USER_APPLICATION_ABOUT_SCREEN_PREFERRED_NAME_ERROR_SELECTOR = '.c-t
 export const USER_APPLICATION_ABOUT_SCREEN_PHONE_ERROR_SELECTOR = '.c-textfield__error.c-textfield__error--phone';
 export const USER_APPLICATION_ABOUT_SCREEN_BIRTHDAY_ERROR_SELECTOR = '.c-textfield__error.c-textfield__error--birthday';
 export const USER_APPLICATION_ABOUT_SCREEN_ZIPCODE_ERROR_SELECTOR = '.c-textfield__error.c-textfield__error--zip-code';
+export const USER_APPLICATION_TEAM_DETAIL_SCREEN_ANSWER_ERROR_SELECTOR = '.c-textfield__error.c-textfield__error--td';
 export const USER_APPLICATION_CONTINUE_BUTTON_SELECTOR = '.c-btn.c-btn--primary.c-application__submit';
 export const USER_APPLICATION_ABOUT_CONTINUE_BUTTON_SELECTOR = '.c-btn.c-btn--primary.c-application__submit-about';
 export const USER_APPLICATION_QUESTION_CONTINUE_BUTTON_SELECTOR = '.c-btn.c-btn--primary.c-application__submit--question';

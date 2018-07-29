@@ -204,7 +204,7 @@ const transitionsWithoutRenderActions = [
     guards: [
       {
         predicate: T,
-        to: STATE_REVIEW,
+        to: STATE_APPLIED,
         action: updateUserAppWithHasApplied
       },
     ]
