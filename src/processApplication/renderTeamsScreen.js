@@ -37,39 +37,43 @@ export function renderTeamScreen(model) {
     ? div('.c-application__error', `An error occurred : ${errorMessage}`)
     : div('.c-application__error', '');
 
-  return div('#page', [
-    renderHeader(projectName, projectDate),
-    renderTitle(projectName),
-    renderProgressIndicator(step),
-    div(".ui.bottom.attached.segment", [
-      h4(".ui.dividing.header", [`Select a team`]),
-      div(`${USER_APPLICATION_TEAMLIST_SELECTOR}.ui.list`,
-        mapIndexed((teamKey, index) => {
-          const { description, name, question, hasBeenJoined, answer } = teams[teamKey];
+  return {
+    output: {
+      DOM: div('#page', [
+        renderHeader(projectName, projectDate),
+        renderTitle(projectName),
+        renderProgressIndicator(step),
+        div(".ui.bottom.attached.segment", [
+          h4(".ui.dividing.header", [`Select a team`]),
+          div(`${USER_APPLICATION_TEAMLIST_SELECTOR}.ui.list`,
+            mapIndexed((teamKey, index) => {
+              const { description, name, question, hasBeenJoined, answer } = teams[teamKey];
 
-          return void 0,
-            div(".item", [
-              div(".right.floated.content", [
-                div(".ui.button", [hasBeenJoined ? `O` : 'X'])
-              ]),
-              img(".ui.avatar.image", {
-                "attrs": {
-                  "src": `./assets/images/teams/${name}.jpg`, // NOTE : same image to
-                  // simplify demo
-                }
-              }),
-              div(".content", {
-                "attrs": { 'data-index': index }
-              }, [name])
-            ])
-        }, keys(teams)),
-      )
-    ]),
-    div(`${USER_APPLICATION_TEAM_CONTINUE_BUTTON_SELECTOR}${disabledSelector}.ui.fluid.primary.button`, {
-      "attrs": {
-        "tabindex": "0",
-      }
-    }, [`Continue`]),
-    divErrorMessage
-  ])
+              return void 0,
+                div(".item", [
+                  div(".right.floated.content", [
+                    div(".ui.button", [hasBeenJoined ? `O` : 'X'])
+                  ]),
+                  img(".ui.avatar.image", {
+                    "attrs": {
+                      "src": `./assets/images/teams/${name}.jpg`, // NOTE : same image to
+                      // simplify demo
+                    }
+                  }),
+                  div(".content", {
+                    "attrs": { 'data-index': index }
+                  }, [name])
+                ])
+            }, keys(teams)),
+          )
+        ]),
+        div(`${USER_APPLICATION_TEAM_CONTINUE_BUTTON_SELECTOR}${disabledSelector}.ui.fluid.primary.button`, {
+          "attrs": {
+            "tabindex": "0",
+          }
+        }, [`Continue`]),
+        divErrorMessage
+      ])
+    }
+  }
 }

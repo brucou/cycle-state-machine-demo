@@ -155,14 +155,12 @@ export const updateModelWithQuestionDataAndTeamsStep = mergeModelUpdates([
 ]);
 
 function patchModelWithQuestionData(formData) {
-  return {
-    model_update: flatten([
+  return flatten([
       toJsonPatch('/userApplication/questions')(pick(questionFields, formData)),
       addOpToJsonPatch('/userApplication/progress/step', STEP_TEAMS),
       addOpToJsonPatch('/validationMessages', {}),
       addOpToJsonPatch('/errorMessage', null),
     ])
-  }
 }
 
 export function updateModelWithSelectedTeamData(model, eventData) {

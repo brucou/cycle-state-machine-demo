@@ -36,104 +36,108 @@ export function renderReviewScreen(model) {
 
   console.info('renderReviewScreen > user application', model.userApplication);
 
-  return div('#page', [
-    renderHeader(projectName, projectDate),
-    div(".ui.description", [
-      p([`Does this look good ?`])
-    ]),
-    renderProgressIndicator(step),
-    div(".ui.one.cards", [
-      div(".card", [
-        div(".content", [
-          i(`${USER_APPLICATION_REVIEW_ABOUT_SELECTOR}.right.floated.edit.icon`),
-          div(".header", [ABOUT_YOU]),
-          div(".ui.list", [
-            div(".item", [
-              div(".ui.button", [
-                i(".info.icon")
+  return {
+    output: {
+      DOM: div('#page', [
+        renderHeader(projectName, projectDate),
+        div(".ui.description", [
+          p([`Does this look good ?`])
+        ]),
+        renderProgressIndicator(step),
+        div(".ui.one.cards", [
+          div(".card", [
+            div(".content", [
+              i(`${USER_APPLICATION_REVIEW_ABOUT_SELECTOR}.right.floated.edit.icon`),
+              div(".header", [ABOUT_YOU]),
+              div(".ui.list", [
+                div(".item", [
+                  div(".ui.button", [
+                    i(".info.icon")
+                  ]),
+                  superPower
+                ]),
+                div(".item", [
+                  div(".ui.button", [
+                    i(".user.outline.icon")
+                  ]),
+                  legalName + " (" + preferredName + ")"
+                ]),
+                div(".item", [
+                  div(".ui.button", [
+                    i(".text.telephone.icon")
+                  ]),
+                  phone
+                ]),
+                div(".item", [
+                  div(".ui.button", [
+                    i(".birthday.icon")
+                  ]),
+                  date
+                ]),
+                div(".item", [
+                  div(".ui.button", [
+                    i(".info.icon")
+                  ]),
+                  zipCode
+                ])
               ]),
-              superPower
-            ]),
-            div(".item", [
-              div(".ui.button", [
-                i(".user.outline.icon")
-              ]),
-              legalName + " (" + preferredName + ")"
-            ]),
-            div(".item", [
-              div(".ui.button", [
-                i(".text.telephone.icon")
-              ]),
-              phone
-            ]),
-            div(".item", [
-              div(".ui.button", [
-                i(".birthday.icon")
-              ]),
-              date
-            ]),
-            div(".item", [
-              div(".ui.button", [
-                i(".info.icon")
-              ]),
-              zipCode
             ])
-          ]),
-        ])
-      ])
-    ]),
-    div(".ui.one.cards", [
-      div(".card", [
-        div(".content", [
-          i(`${USER_APPLICATION_REVIEW_OPP_QUESTION_SELECTOR}.right.floated.edit.icon`),
-          div(".header", [`Organizer's question`]),
-          div(".ui.list.message", [
-            div(".item", [
-              img(".ui.avatar.image", {
-                "attrs": {
-                  "src": "./assets/images/avatar/small/matt.jpg",
-                  "className": "ui avatar image"
-                }
-              }),
-              div(".content", [
-                div(".header", [oppQuestion]),
-                'Organizer name and role' // NOTE : fixed content for now
+          ])
+        ]),
+        div(".ui.one.cards", [
+          div(".card", [
+            div(".content", [
+              i(`${USER_APPLICATION_REVIEW_OPP_QUESTION_SELECTOR}.right.floated.edit.icon`),
+              div(".header", [`Organizer's question`]),
+              div(".ui.list.message", [
+                div(".item", [
+                  img(".ui.avatar.image", {
+                    "attrs": {
+                      "src": "./assets/images/avatar/small/matt.jpg",
+                      "className": "ui avatar image"
+                    }
+                  }),
+                  div(".content", [
+                    div(".header", [oppQuestion]),
+                    'Organizer name and role' // NOTE : fixed content for now
+                  ])
+                ])
+              ]),
+              div(".description", [
+                img(".ui.floated.right.avatar.image", {
+                  "attrs": {
+                    "src": "./assets/images/avatar/large/elliot.jpg",
+                    "className": "ui floated right avatar image"
+                  }
+                }),
+                p([oppAnswer])
               ])
             ])
-          ]),
-          div(".description", [
-            img(".ui.floated.right.avatar.image", {
-              "attrs": {
-                "src": "./assets/images/avatar/large/elliot.jpg",
-                "className": "ui floated right avatar image"
-              }
-            }),
-            p([oppAnswer])
           ])
-        ])
-      ])
-    ]),
-    div(".ui.one.cards", [
-      div(".card", [
-        div(".content", [
-          i(`${USER_APPLICATION_REVIEW_TEAMS_SELECTOR}.right.floated.edit.icon`),
-          div(".header", [`Team selection`]),
-          div(".ui.list",
-            // TODO : should only display those teams which has been joined
-            values(mapObjIndexed((team, teamKey) => {
-              const { description, name, question, hasBeenJoined, answer } = team;
+        ]),
+        div(".ui.one.cards", [
+          div(".card", [
+            div(".content", [
+              i(`${USER_APPLICATION_REVIEW_TEAMS_SELECTOR}.right.floated.edit.icon`),
+              div(".header", [`Team selection`]),
+              div(".ui.list",
+                // TODO : should only display those teams which has been joined
+                values(mapObjIndexed((team, teamKey) => {
+                  const { description, name, question, hasBeenJoined, answer } = team;
 
-              return hasBeenJoined
-                ? div(".item", [div(".ui.button", [i(".info.icon")]), name])
-                : null
-            }, teams)).filter(complement(isNil))
-          )
-        ])
+                  return hasBeenJoined
+                    ? div(".item", [div(".ui.button", [i(".info.icon")]), name])
+                    : null
+                }, teams)).filter(complement(isNil))
+              )
+            ])
+          ])
+        ]),
+        div(".ui.basic.segment", [
+          button(`${USER_APPLICATION_REVIEW_SUBMIT_SELECTOR}.ui.fluid.primary.button`, [`Apply for the things`])
+        ]),
+        divErrorMessage
       ])
-    ]),
-    div(".ui.basic.segment", [
-      button(`${USER_APPLICATION_REVIEW_SUBMIT_SELECTOR}.ui.fluid.primary.button`, [`Apply for the things`])
-    ]),
-    divErrorMessage
-  ])
+    }
+  }
 }

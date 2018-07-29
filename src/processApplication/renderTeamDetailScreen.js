@@ -36,50 +36,54 @@ export function renderTeamDetailScreen(model) {
     ? div('.c-application__error', `An error occurred : ${errorMessage}`)
     : div('.c-application__error', '');
 
-  return div('#page', [
-    renderHeader(projectName, projectDate),
-    renderTitle(projectName),
-    renderProgressIndicator(step),
-    div(".ui.bottom.attached.segment", [
+  return {
+    output: {
+      DOM: div('#page', [
+        renderHeader(projectName, projectDate),
+        renderTitle(projectName),
+        renderProgressIndicator(step),
+        div(".ui.bottom.attached.segment", [
 
-      div(`${USER_APPLICATION_BACK_TO_TEAMS_SELECTOR}.ui.fluid.negative.button`, {
-        "attrs": {
-          "tabindex": "0",
-        }
-      }, [`Back to teams`]),
-      div(".ui.divided.selection.list", [
-        a(".item", [
-          div(".ui.horizontal.label", [teamName]),
-          teamDescription
-        ])
-      ]),
-      form(".ui.form", [
-        div(".ui.icon.message", [
-          i(".inbox.icon"),
-          div(".content", [
-            div(".header", [teamQuestion]),
-            p([`Team lead's name/role`]) // NOTE : left constant, not to complicate fixture
+          div(`${USER_APPLICATION_BACK_TO_TEAMS_SELECTOR}.ui.fluid.negative.button`, {
+            "attrs": {
+              "tabindex": "0",
+            }
+          }, [`Back to teams`]),
+          div(".ui.divided.selection.list", [
+            a(".item", [
+              div(".ui.horizontal.label", [teamName]),
+              teamDescription
+            ])
+          ]),
+          form(".ui.form", [
+            div(".ui.icon.message", [
+              i(".inbox.icon"),
+              div(".content", [
+                div(".header", [teamQuestion]),
+                p([`Team lead's name/role`]) // NOTE : left constant, not to complicate fixture
+              ])
+            ]),
+            div(".field", [
+              textarea(`${USER_APPLICATION_FORM_INPUT_TEAM_ANSWER_SELECTOR}`, {
+                "key": latestTeamIndex,
+                "attrs": {
+                  "name": "userapp[organizer-question]",
+                  "placeholder": "Please enter your answer here"
+                },
+                "props": makeInputProps(teamAnswer)
+              })
+            ])
           ])
         ]),
-        div(".field", [
-          textarea(`${USER_APPLICATION_FORM_INPUT_TEAM_ANSWER_SELECTOR}`, {
-            "key": latestTeamIndex,
-            "attrs": {
-              "name": "userapp[organizer-question]",
-              "placeholder": "Please enter your answer here"
-            },
-            "props": makeInputProps(teamAnswer)
-          })
-        ])
+        div(".ui.fluid.buttons", [
+          button(`${USER_APPLICATION_SKIP_TEAM_SELECTOR}.ui.button`, [`Skip this team`]),
+          div(".or"),
+          hasBeenJoined
+            ? button(`${USER_APPLICATION_JOIN_UNJOIN_TEAM_SELECTOR}.ui.positive.button`, [`Unjoin team`])
+            : button(`${USER_APPLICATION_JOIN_UNJOIN_TEAM_SELECTOR}.ui.positive.button`, [`Join team`])
+        ]),
+        divErrorMessage
       ])
-    ]),
-    div(".ui.fluid.buttons", [
-      button(`${USER_APPLICATION_SKIP_TEAM_SELECTOR}.ui.button`, [`Skip this team`]),
-      div(".or"),
-      hasBeenJoined
-        ? button(`${USER_APPLICATION_JOIN_UNJOIN_TEAM_SELECTOR}.ui.positive.button`, [`Unjoin team`])
-        : button(`${USER_APPLICATION_JOIN_UNJOIN_TEAM_SELECTOR}.ui.positive.button`, [`Join team`])
-    ]),
-    divErrorMessage
-  ])
+    }
+  }
 }
