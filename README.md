@@ -30,6 +30,12 @@ Here are the initial specifications for the volunteer application workflow, as e
 
 ![wireframes](public/assets/images/graphs/application%20process.png)
 
+In addition, the following rules must hold :
+
+- it should be possible for the user to interrupt at any time its application and continue it 
+later from where it stopped
+- user-generated data must be validated
+
 # First iteration
 ## Modelizing the user flow with an extended state machine
 On the first iteration, the provided wireframes are refined into a workable state machine, which 
@@ -38,7 +44,14 @@ reproduces the provided user flow, while addressing key implementation details (
 
 ![extended state machine](public/assets/images/graphs/sparks%20application%20process%20with%20comeback%20proper%20syntax%20-%20flat%20fsm.png)
 
+The behaviour is pretty self-explanatory. The machines moves from its initial state to the fetch 
+state which awaits for a fetch event carrying the fetched data (previously saved application 
+data). From that, the sequence of screens flows in function of the user flow and rules 
+defined.
 
+Note that we could have included processing of the fetch event inside our state machine. We could
+ have instead fetched the relevant data, and then start the state machine with an initial 
+ transition which carries the fetched data as INIT event data. 
 
 ## Tests
 **coming soon**
