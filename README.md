@@ -30,11 +30,13 @@ Here are the initial specifications for the volunteer application workflow, as e
 
 ![wireframes](public/assets/images/graphs/application%20process.png)
 
-In addition, the following rules must hold :
+In addition, the following must hold :
 
 - it should be possible for the user to interrupt at any time its application and continue it 
 later from where it stopped
 - user-generated data must be validated
+- after entering all necessary data for his application, the user can review them and decide to 
+modify some of them, by returning to the appropriate screen (cf. pencil icons in the wireframe)
 
 # First iteration
 ## Modelizing the user flow with an extended state machine
