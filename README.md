@@ -21,8 +21,8 @@ showcase the definition and behaviour of an extended state machine.
 data-fetching. We will also implement pessimistic save for the most 'expensive' step in the 
 workflow. This will in turn serve to showcase an hierarchical extended state machine.
 
-With those two exemples, we will be able to conclude by recapitulating the advantages and 
-tradeoff associated to using state machines for specifying and implementing user interfaces. 
+With those two examples, we will be able to conclude by recapitulating the advantages and 
+trade-off associated to using state machines for specifying and implementing user interfaces. 
 
 # General specifications
 Here are the initial specifications for the volunteer application workflow, as extracted from the
@@ -51,13 +51,23 @@ defined.
 
 Note that we could have included processing of the fetch event inside our state machine. We could
  have instead fetched the relevant data, and then start the state machine with an initial 
- transition which carries the fetched data as INIT event data. 
+ INIT event which carries the fetched data. Another option is also to start the state machine 
+ with an intial extended state which includes the fetched data.
 
 ## Tests
 **coming soon**
 
 ## Implementation
-show the drawing for the state machine with our visualizer??
+We use the stream-oriented `cyclejs` framework to showcase our state machine library. To that 
+purpose, we use the `makeStreamingStateMachine` from our library to match a stream of actions to 
+ a stream of events. We then wire that stream of actions with cyclejs sinks. We make use of two 
+ drivers : the DOM driver for udpating the screen, and a domain driver for fetching data. 
+ 
+ Code available in the branch **TODO**.
+ 
+ ## Run
+Check-out the branch on your local computer then type `npm run start` in the root directory for 
+that branch.
 
 # Second iteration
 **coming soon**
