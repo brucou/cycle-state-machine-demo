@@ -35,7 +35,7 @@ Here are the initial specifications for the volunteer application workflow, as e
 On the first iteration, the provided wireframes are refined into a workable state machine, which 
 reproduces the provided user flow, while addressing key implementation details.
 
-![extended state machine](public/assets/images/graphs/sparks%20application%20process%20with%20comeback%20proper%20syntax%20flat%20fsm.png)
+![extended state machine](public/assets/images/graphs/sparks%20application%20process%20with%20comeback%20proper%20syntax%20-%20flat%20fsm.png)
 
 
 
