@@ -37,6 +37,8 @@ reproduces the provided user flow, while addressing key implementation details.
 
 ![extended state machine](public/assets/images/graphs/sparks%20application%20process%20with%20comeback%20proper%20syntax%20flat%20fsm.png)
 
+
+
 ## Tests
 **coming soon**
 
