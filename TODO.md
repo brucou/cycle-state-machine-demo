@@ -1,10 +1,7 @@
 # TODO
 - publish new version of state-transducer
-- bug for empty field in teams ; also when trying to unjoin a team from fill to empty field, no 
-progress and no error messages displayed
 - write tests for the automata, not the streaming version, the standard version
   - so make all the scenarios
-- bug also when applying : does not progress...
 
 - continue program in app
   - write fsm first in separate branch without hierarchy
@@ -14,10 +11,6 @@ progress and no error messages displayed
   - merge new branch into master
 
 # Features
-!! do the multi step workflow instead!!! it is better than any other examples from xstate... and 
-do it with cycle latest + rx - no onionify, just DOM driver, and remote driver, maybe local 
-storage, but will have to explain how to reset local storage... us local forage??
-
 sooo. keep the same state machine design. REFINE every state. 
 
 - Fetch state : fetch ok -> next, fetch error -> display error and retry 5 times with exponential
