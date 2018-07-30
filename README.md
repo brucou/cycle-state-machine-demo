@@ -28,7 +28,7 @@ tradeoff associated to using state machines for specifying and implementing user
 Here are the initial specifications for the volunteer application workflow, as extracted from the
  UX designers. Those initial specifications are light in details, and are simple lo-fi wireframes.
 
-![wireframes](public/assets/graphs/application%20process.png)
+![wireframes](public/assets/images/graphs/application%20process.png)
 
 # First iteration
 ## Modelizing the user flow with an extended state machine
