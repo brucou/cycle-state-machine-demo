@@ -60,9 +60,7 @@ Note that we could have included processing of the fetch event inside our state 
 **coming soon**
 
 ## Implementation
-We use the stream-oriented `cyclejs` framework to showcase our state machine library. To that 
-purpose, we use the `makeStreamingStateMachine` from our library to match a stream of actions to 
- a stream of events. We then wire that stream of actions with cyclejs sinks. We make use of two 
+We use the stream-oriented `cyclejs` framework to showcase our [state machine library](https://github.com/brucou/state-transducer). To that purpose, we use the `makeStreamingStateMachine` from our library to match a stream of actions to a stream of events. We then wire that stream of actions with cyclejs sinks. We make use of two 
  drivers : the DOM driver for udpating the screen, and a domain driver for fetching data. 
  
  Code available in the branch **TODO**.
