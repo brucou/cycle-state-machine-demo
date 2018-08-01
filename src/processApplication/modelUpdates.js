@@ -5,7 +5,7 @@ import {
 } from './properties';
 import { assertContract } from "@rxcc/contracts"
 import { checkUserApplicationContracts } from '../domain/contracts';
-import { mergeModelUpdates } from "../../../state-transducer/src"
+import { mergeModelUpdates } from "state-transducer"
 
 function _updateModelWithStepOnly(step, model, eventData) {
   return {

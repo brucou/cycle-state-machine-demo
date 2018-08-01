@@ -5,7 +5,7 @@ import {
   updateModelWithAboutDataAndStepQuestion, updateModelWithAboutDataAndStepReview, updateModelWithAppliedData,
   updateModelWithQuestionDataAndStepReview, updateModelWithQuestionDataAndTeamsStep, updateModelWithStepAndHasReviewed
 } from "./modelUpdates"
-import { mergeActionFactories as _mergeActionFactories } from '../../../state-transducer/src';
+import { mergeActionFactories as _mergeActionFactories } from 'state-transducer';
 import { mergeOutputFn } from "../helpers"
 
 

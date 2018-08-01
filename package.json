@@ -20,7 +20,7 @@
     "@cycle/rxjs-run": "7.1.0",
     "rxjs": "5.4.3",
     "ramda": "^0.25.0",
-    "state-transducer": "^0.3.2",
+    "state-transducer": "^0.3.3",
     "@rxcc/contracts": "^0.1.11",
     "@rxcc/utils": "^0.1.8",
     "localforage": "^1.7.0"

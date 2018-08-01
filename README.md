@@ -54,17 +54,17 @@ defined.
 Note that we could have included processing of the fetch event inside our state machine. We could
  have instead fetched the relevant data, and then start the state machine with an initial 
  INIT event which carries the fetched data. Another option is also to start the state machine 
- with an intial extended state which includes the fetched data.
+ with an initial extended state which includes the fetched data.
 
 ## Tests
-**coming soon**
+**coming soon I swear**
 
 ## Implementation
 We use the stream-oriented `cyclejs` framework to showcase our [state machine library](https://github.com/brucou/state-transducer). To that purpose, we use the `makeStreamingStateMachine` from our library to match a stream of actions to a stream of events. 
 We then wire that stream of actions with cyclejs sinks. In this iteration, we make use of two 
  drivers : the DOM driver for udpating the screen, and a domain driver for fetching data. 
  
- Code available in the branch **TODO**.
+Code available in [dedicated branch](https://github.com/brucou/cycle-state-machine-demo/tree/first-iteration).
  
  ## Run
 Check-out the branch on your local computer then type `npm run start` in the root directory for 
