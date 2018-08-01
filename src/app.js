@@ -26,8 +26,6 @@ const appSettings = {
   userKey: fakeUserKey,
   opportunityKey: fakeOpportunityKey,
   projectKey: fakeProjectKey,
-  // NOTE : apparently not necessary
-  // emptyUserApplication : getEmptyUserApplicationModel({opportunityKey: fakeOpportunityKey, userKey: fakeUserKey})
 };
 
 function makeRxStreamingStateMachine(fsmDef) {

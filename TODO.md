@@ -1,5 +1,4 @@
 # TODO
-- publish new version of state-transducer
 - write tests for the automata, not the streaming version, the standard version
   - so make all the scenarios
 

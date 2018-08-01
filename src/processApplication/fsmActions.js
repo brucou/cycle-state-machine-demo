@@ -55,7 +55,7 @@ function getUserApplicationUpdates(formData, userApplication) {
   }
   const step = userApplication.progress.step;
   const updates = reShapeEventData(formData, step);
-  let newUserApplication = merge(userApplication, updates);
+  const newUserApplication = merge(userApplication, updates);
 
   return newUserApplication
 }

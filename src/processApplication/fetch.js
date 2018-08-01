@@ -82,11 +82,5 @@ export function fetchUserApplicationModelData(sources, settings) {
         validationMessages: {}
       })
   )
-  // NOTE : that is done later in the end (in the guard) : TODO : think : better here?
-  // .map(model => {
-  //   return model.userApplication
-  //     ? model
-  //     : emptyUserApplication
-  // })
     .take(1)
 }
