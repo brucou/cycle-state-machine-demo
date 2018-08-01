@@ -3,9 +3,6 @@ This demo aims at showing how state machines can be used to modelize reactive sy
 particular user interfaces. They have long been used for embedded systems, in particular for 
 safety-critical software.
 
-**TO COMPLETE with article from atlantic : today software are systems, whose complexity is over 
-our capacity to handle it, and we need to change how we handle that complexity**
-
 We will use a real case of a multi-step workflow (the visual interface however has been changed, 
 but the logic is the same). A user is applying to a volunteering opportunity, and to do so 
 navigate through a 5-step process, with a specific screen dedicated to each step. When moving 
@@ -23,6 +20,9 @@ workflow. This will in turn serve to showcase an hierarchical extended state mac
 
 With those two examples, we will be able to conclude by recapitulating the advantages and 
 trade-off associated to using state machines for specifying and implementing user interfaces. 
+
+The implementation uses `cyclejs` as framework, and [`state-transducer`](https://github.com/brucou/state-transducer#example-run) as a state machine 
+library.
 
 # General specifications
 Here are the initial specifications for the volunteer application workflow, as extracted from the
@@ -60,7 +60,8 @@ Note that we could have included processing of the fetch event inside our state 
 **coming soon**
 
 ## Implementation
-We use the stream-oriented `cyclejs` framework to showcase our [state machine library](https://github.com/brucou/state-transducer). To that purpose, we use the `makeStreamingStateMachine` from our library to match a stream of actions to a stream of events. We then wire that stream of actions with cyclejs sinks. We make use of two 
+We use the stream-oriented `cyclejs` framework to showcase our [state machine library](https://github.com/brucou/state-transducer). To that purpose, we use the `makeStreamingStateMachine` from our library to match a stream of actions to a stream of events. 
+We then wire that stream of actions with cyclejs sinks. In this iteration, we make use of two 
  drivers : the DOM driver for udpating the screen, and a domain driver for fetching data. 
  
  Code available in the branch **TODO**.
