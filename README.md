@@ -56,6 +56,8 @@ Note that we could have included processing of the fetch event inside our state 
  INIT event which carries the fetched data. Another option is also to start the state machine 
  with an initial extended state which includes the fetched data.
 
+![demo](public/assets/images/animated_demo.gif)
+
 ## Tests
 **coming soon I swear**
 
