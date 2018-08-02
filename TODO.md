@@ -25,3 +25,20 @@ so we have exemplified : retry logic, cancellation logic (NO), optimistic save, 
 In the pending state : display a loader
 
 # involve geraud henrion in designing my debug tool
+
+# tests
+- write model : state machine but no need for the function implementation, or guard implementation
+- generate inputs
+- generate the output for those inputs according to model
+- run implementation
+
+So we are in a state S with guards G(S) corresponding to events E(S)<E, actions A(G, S) to 
+transition T(G, S)
+We have generate inputs sequence (I) leading to a machine in State S.
+We want to generate (I) + (J) where J is a new sequence of events which cover all the guards G(S).
+So we need a generator function which can emit event data passing each guard. that generator 
+function must thus depend on the current extended state of the state machine
+So we have a state machine with the same states and guards with actions (to generate expected 
+output), and a generator function for each state.
+generator function can be composed (one generator per guard, then assembly to have one generator 
+for all guards, maybe using probabilities) 

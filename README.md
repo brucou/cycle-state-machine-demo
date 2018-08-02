@@ -21,8 +21,7 @@ workflow. This will in turn serve to showcase an hierarchical extended state mac
 With those two examples, we will be able to conclude by recapitulating the advantages and 
 trade-off associated to using state machines for specifying and implementing user interfaces. 
 
-The implementation uses `cyclejs` as framework, and [`state-transducer`](https://github.com/brucou/state-transducer#example-run) as a state machine 
-library.
+The implementation uses `cyclejs` as framework, and [`state-transducer`](https://github.com/brucou/state-transducer#example-run) as a state machine library.
 
 # General specifications
 Here are the initial specifications for the volunteer application workflow, as extracted from the
