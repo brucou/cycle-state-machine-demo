@@ -109,7 +109,7 @@ complicated to program boolean functions which represent these elements.
 
 So we will use hand-validated tests as a test method.
 
-### Test strategy **TODO** fuse with whats befor
+### Test strategy **TODO** fuse with whats before
 As mentioned previously, we will have a productivity cost related to human-based testing. We will
  alleviate that by :
  
@@ -125,8 +125,8 @@ As mentioned previously, we will have a productivity cost related to human-based
   the result of the non-parameterized version of the test. **TODO explain bettr**
  
 We will use the state machine as a model, and automatically generate input tests from it.
-**explain MBT testing procedure, the input generation, the oracale, the abstract tests into 
-concrete tests, shrinking failing tests, and also bcause EFSM should add some data-flow testing, 
+**explain MBT testing procedure, the input generation, the oracle, the abstract tests into 
+concrete tests, shrinking failing tests, and also because EFSM should add some data-flow testing, 
 i.e. generators which randomizes the data - or randomize between a predefined set**
 
 ### Test execution
