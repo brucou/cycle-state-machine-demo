@@ -47,10 +47,11 @@ for all guards, maybe using probabilities)
 - I have to generate an {event_label : event_data}
 - for every event (accepted by the state machine! including those not handled in that state!!), for 
 all possible transitions, i.e. for each guard have a generator function which generates data 
-which passes every combination of T/F for each transition, including fullfilling no guard if 
+which passes every combination of T/F for each transition, including fulfilling no guard if 
 that's possible. The generator should be configurable to be biased to favor some paths more than 
 others. So a generator generates an {event_label : event_data} on every call.
-- OR pick a probably distribution to pick a (event_label, guard) to produce {event_label : event_data}
+- OR pick a probability distribution to pick a (event_label, guard) to produce {event_label : 
+event_data}
 - so each state has a probably distribution between events, and then between guards (or between 
 event-guard gathered together?? mmm NO)
 - once I have the event, I know what is the satisfied guard. I know which is the target control 
@@ -62,11 +63,11 @@ implementation beforehand).. So the guards passed should not be based on the ext
  passes), and a S0 in the model state machine; repeat the algorithm from S0
 - be careful about loops, state A -> B -> A ! in the generator pass some state about the 
 generation?? NO
-- so because all paths are taken with different probabibilities the graph is thoroughly searched
+- so because all paths are taken with different probabilities the graph is thoroughly searched
 
 1. generate input sequence, and then check properties on the actual output sequence
 2. generate random input sequence, generate oracle output sequence, then compare vs. actual sequence
-  - trying to exploit the casuality property of automata
+  - trying to exploit the causality property of automata
 3. generate controlled input sequence from fixed values to easy the oracle output computation, then 
 compare vs. actual sequence
 4. generate user scenario (start state, end state) and input sequence fulfilling these scenario
@@ -75,30 +76,15 @@ scenarios can be coalesced in group
 
 so I have an additive tree of inputs 
 
-# graph adt library
-- two methods (call that lenses or not??)
-  - adjacent(G, x, y) i.e. incidence matrix [x,y] (A)
-  - neighbors(G, x) 
-- reachability matrix B such that B = (I+A)^(n-1), with n number of nodes of graph 
-  - but better apply algorithm of this guy I forgot the name wallson?
-- then apply An Algorithm for ... which uses A and B and    p2/2, AN ALGORITHM FOR COMPUTING ALL PATHS IN A GRAPH
-- with all paths, I can get paths which start in s and end in t = user scenario (full)
-  - so I have both partial scenario and end-2-end scenario
-- then for every path in the graph, I need to generate input sequences, which are compatible with
- the sequence (i.e. passing the correct guards)
-
-- alternatively use naive algorithm which will include cycles and loops, with a given level
-  - that avoids having to add them a posteriori, though it might be also worthy to separate??
-
-- then also problems of adding not accepted events!
-  - not really a good idea to modelize it by loops, too many of them for every node! increases 
-  complexity of algorithms too much
-  - add them by hand to each input sequence or something like that 
-
-- so I need a generator = f(s, g), so a given transition s -> t needs to be associated to a g
-
-- edge case ! several edges for same (s,t)!! how is that represented by a matrix?? Having only 
-one means fusing guards, which is possible semantically but impossible to ensure by contract!! 
-mmm maybe use the naive algorithm in the end. that way s can have t several times as neighbour. 
-yes probably the best. Cf Mathoverflow. Though if several transitions (s,t) once I ahve all 
-paths, it is easy to duplicate it to make for missing transitions/guards... edge case to include!!
+- have the same FSM adding
+  - input generator :: OriginState -> TargetState -> InputSequence -> InputSequence
+    - basically produces an input sequence from a previous input sequence
+    - could also be InputSequence -> InputSequence, if we know already the transition, which we 
+    do, as we put the input generator into the transition object
+  - oracle :: InputSequence -> Output -> Boolean
+    - basically from an input sequence produce a predicate which validates the generated output 
+    from that input sequence. OR could just validate the last output : TO THINK ABOUT choice 
+    important for shrinking reasons
+    - be careful about edge cases, it could be that no output is generated!! it has be able to 
+    check that too. So if no output must be passed NO_OUTPUT as value. Important that it not be 
+    undefined as undefined could be a valid value

@@ -58,7 +58,96 @@ Note that we could have included processing of the fetch event inside our state 
 ![demo](public/assets/images/animated_demo.gif)
 
 ## Tests
+It is important to understand that the defined state machine acts as a precise specification for 
+the reactive system under development. It is called a model of the reactive system for this 
+reason. This model can double as implementation for that reactive system, in fact as 
+implementation for the part of the reactive system it modelizes. For instance, our model does not
+ modelize actual actions, nor the interfaced systems, e.g. HTTP requests, the network, etc. We 
+ have chosen to modelize only the input/output (event/action) relation, under the hypothesis that 
+ the interfaced systems can be tested separately, for instance during acceptance or 
+ integration tests.
+
+So we went from an informal specification of our reactive system to a precise specification of 
+such. That is great and desirable but then we have to actually check that we have done so without
+ loosing or adding requirements, i.e. that both specifications are equivalent. The only way to do
+  this is by testing the model prior to using it, and those tests are necessarily validated 
+  manually (i.e. **you** are the tester), as only the informal specification (which you are 
+  supposed to build an accurate mental model of) can be used to such purposes.
+
+The good news is that, while a part of the related testing process is manual, a part can be 
+automatically generated. Typically it is possible to generate test input sequences automatically,
+ by using the model specification of the inputs it accepts. It is not however possible in general
+  to check automatically the correctness of the output. First of all, the input sequences derived
+   might be wrong, if the model specifies them incorrectly. Second, if we had a computation which
+    could accurately predict an output sequnce for every input sequence (what is termed an 
+    *oracle*), then we can use **that** as a model, and there is no need to test.
+
+The bottom line is, we have informal UI requirements, we produce a state-machine-based 
+detailed specification from that, and subsequently we generate input sequences and the 
+corresponding output sequences, which we validate manually.
+
+### Test methods
+There are three ways to test the model :
+
+- property-based testing
+- contracts, applying to transition, guards and states
+- hand-validated tests
+
+In this demo, we will rely on hand-validated tests :
+
+- it is not clear what set of properties would guarantee a coverage of the system under 
+development which generates trust
+  - a property of the system could be that the `save data` output is only emitted immediately as 
+  a consequence of a `continue click` input.
+  - we could go on with more properties, but it is difficult to think about properties which 
+  would relate entire sequences of inputs and outputs, in an exhaustive way. In fact 
+  if we could, we would have an alternative **formal specification** for the reactive system under 
+  development
+- we may easily encounter elements of a specification that we cannot (or will not) check by 
+contracts (preconditions, post-conditions, and invariants). It may be too expensive, or too 
+complicated to program boolean functions which represent these elements.
+
+So we will use hand-validated tests as a test method.
+
+### Test strategy **TODO** fuse with whats befor
+As mentioned previously, we will have a productivity cost related to human-based testing. We will
+ alleviate that by :
+ 
+ - generating a set of input sequences which coverage criteria over a given threshold
+   - all paths in the graph derived from the model will be taken
+ - compute the associated output for each input sequence
+ - from the input/output relation, generate a BDD-style file (using Gherkin) which will describes
+  the test in human language
+    - this aims at enabling faster validation by the manual tester, and communication with the 
+    non-technical domain people who participated in the specification, in case of doubt
+ - the set of validated tests can be cherry picked, parameterized and used to generate higher 
+ coverage of the extended state of the state machine model, this time with an oracle derived from
+  the result of the non-parameterized version of the test. **TODO explain bettr**
+ 
+We will use the state machine as a model, and automatically generate input tests from it.
+**explain MBT testing procedure, the input generation, the oracale, the abstract tests into 
+concrete tests, shrinking failing tests, and also bcause EFSM should add some data-flow testing, 
+i.e. generators which randomizes the data - or randomize between a predefined set**
+
+### Test execution
+
 **coming soon I swear**
+
+References :
+
+- [Model Based Testing - An Evaluation](http://www.diva-portal.org/smash/get/diva2:831658/FULLTEXT01.pdf)
+  - advantages and disadvantages of MBT
+  - Sometime it happens that a behavioral model contains error. So the model must be debugged! 
+  prior to generate tests
+- [](http://www.axini.com/wp-content/uploads/Ver17Model-Based-Unit-Testing-using0ADecision-Tables.pdf)
+  - advantages of MBT, more succintly presented
+  - model-based testing process
+  - 3.3.3 Function specifications - difference between model-driven (use for specification i.e. 
+  implementation) and model-based (used for testing for instance, does not need same level of 
+  details)
+  -  Testing strategy ; coverage etc.
+  - in general a pretty clearly explained thesis, even if the decision tables approach (2017 
+  rally?) seems inferior to me to state machine modelling
 
 ## Implementation
 We use the stream-oriented `cyclejs` framework to showcase our [state machine library](https://github.com/brucou/state-transducer). To that purpose, we use the `makeStreamingStateMachine` from our library to match a stream of actions to a stream of events. 
