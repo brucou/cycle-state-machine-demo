@@ -1,7 +1,7 @@
 import Rx from 'rxjs/Rx'
 import { fsm as fsmDef, eventsFactory } from './processApplication/fsmSpecs';
 import { keys, mapObjIndexed, prop } from 'ramda'
-import { makeStreamingStateMachine } from '../../state-transducer/src'
+import { makeStreamingStateMachine } from 'state-transducer'
 import { fakeOpportunityKey, fakeProjectKey, fakeUserKey } from "../fixtures"
 import { DOM, DOMAIN_ACTION } from "./processApplication/properties"
 

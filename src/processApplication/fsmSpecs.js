@@ -1,6 +1,5 @@
 import { both, complement, keys, T } from 'ramda';
-// import { decorateWithEntryActions, identity, INIT_EVENT, INIT_STATE } from 'state-transducer'
-import { decorateWithEntryActions, identity, INIT_EVENT, INIT_STATE } from '../../../state-transducer/src'
+import { decorateWithEntryActions, identity, INIT_EVENT, INIT_STATE } from 'state-transducer'
 import {
   ABOUT_CONTINUE, APPLICATION_COMPLETED, BACK_TEAM_CLICKED, CHANGE_ABOUT, CHANGE_QUESTION, CHANGE_TEAMS, FETCH_EV,
   INIT_S, JOIN_OR_UNJOIN_TEAM_CLICKED, QUESTION_CONTINUE, SKIP_TEAM_CLICKED, STATE_ABOUT, STATE_APPLIED, STATE_QUESTION,
