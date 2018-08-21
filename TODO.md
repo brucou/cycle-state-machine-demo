@@ -88,3 +88,58 @@ so I have an additive tree of inputs
     - be careful about edge cases, it could be that no output is generated!! it has be able to 
     check that too. So if no output must be passed NO_OUTPUT as value. Important that it not be 
     undefined as undefined could be a valid value
+
+edge case : event for which no transition is to be taken should be modelized with a 
+self-transition. But we did tht for error flows. Also events which are not allowed in a state 
+but are in the user interface should be represented on the graph. Then events accepted by the 
+state machine and not in the user interface?? simnulate it too for testing purposes?? NO 
+
+NOOOOOO
+have a generator function on each transition.
+- gen(extendaed state)
+- returns null if not possible in this stat of the state amachine to take taht transition
+- otherwise return an event that triggers that transition
+
+so algorithm becomes :
+
+S0
+for each transitions from S0, generate events
+remove null events
+-> [[event1], [event2]]
+for each sequence of events in [sequence of events],
+run the machine till the last machine
+apply the generator to generate all the possible events
+-> [[event1, X], [event1, Y], [event2, Z]...] or [event1] x [X,Y] 
+so build array of sequences
+at the same time gather the outputs
+apply the same algorithm than for all paths from INIT to t, but don't concatenate paths do the 
+generation and keep track of the outputs
+
+Sooo:
+- given a FSM F, instrument that FSM to output in addition to its usual actions also its control 
+state, extended state, and an array of its transitions, to keep referential equality, take 
+directly the reference of guards.forEach : it should have a to, predicate, action. Call that PreT
+(F), for preTest
+- given a FSM F, add directly into that FSM the generator for each transition, i.e. in guards 
+array add gen:: EventGenerator :: ExtendedState -> Either<Event, NoEvent>, call that T(F), T for 
+test
+  - could maybe be added directly in F? no, better to separate concerns, but then I duplicate...
+  - meaning if I duplicate I need a contract to check T(F) matches F (to define, I could allow 
+  transitions without generators? what would that mean?? default gen outputting no event?)
+- from T(F) get a map GenMap of generator get :: ControlState -> Transition -> EventGenerator
+- Define a state machine :
+  - initial extended state : PreT(F), GenMap, arrayOfEventSequence=[], edgeVisited 
+  F.initial_extended_state, F.adjacency_matrix i.e. getEdges:: ControlState -> Array<Transition>, 
+  control_state_under_test : INIT_STATE
+  - INIT_STATE -> GENERATE
+    - extended state
+    - action : update arrayOfEventSequence, edgeVisited
+      - adjMat(control_state_under_test) -> array of transition for INIT_STATE
+      - generated events = adjMat(...).forEach(transition => GenMap(control_state_under_test, tr)
+      (initial_extended_state))
+```javascript
+generatedEvents.forEach(generatedEvent) => {}) 
+                 isNull(generatedEvent) ? acc : acc.concat([[generatedEvent]])) // the event 
+                 sequence is [generatedEvent]
+      - update edgeVisited
+```      

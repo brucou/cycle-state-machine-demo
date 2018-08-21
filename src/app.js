@@ -1,7 +1,7 @@
 import Rx from 'rxjs/Rx'
-import { events as eventsFactory, states, transitions } from './processApplication/fsmSpecs';
+import { fsm as fsmDef, eventsFactory } from './processApplication/fsmSpecs';
 import { keys, mapObjIndexed, prop } from 'ramda'
-import { makeStreamingStateMachine } from 'state-transducer'
+import { makeStreamingStateMachine } from '../../state-transducer/src'
 import { fakeOpportunityKey, fakeProjectKey, fakeUserKey } from "../fixtures"
 import { DOM, DOMAIN_ACTION } from "./processApplication/properties"
 
@@ -32,12 +32,6 @@ function makeRxStreamingStateMachine(fsmDef) {
   return makeStreamingStateMachine(appSettings, fsmDef)
 }
 
-const fsmDef = {
-  states,
-  events: keys(eventsFactory),
-  transitions,
-  initial_extended_state: { },
-};
 const streamingStateMachine = makeRxStreamingStateMachine(fsmDef);
 
 export function App(sources) {

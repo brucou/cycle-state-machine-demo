@@ -1,5 +1,6 @@
-import { both, complement, T } from 'ramda';
-import { decorateWithEntryActions, identity, INIT_EVENT, INIT_STATE } from 'state-transducer'
+import { both, complement, keys, T } from 'ramda';
+// import { decorateWithEntryActions, identity, INIT_EVENT, INIT_STATE } from 'state-transducer'
+import { decorateWithEntryActions, identity, INIT_EVENT, INIT_STATE } from '../../../state-transducer/src'
 import {
   ABOUT_CONTINUE, APPLICATION_COMPLETED, BACK_TEAM_CLICKED, CHANGE_ABOUT, CHANGE_QUESTION, CHANGE_TEAMS, FETCH_EV,
   INIT_S, JOIN_OR_UNJOIN_TEAM_CLICKED, QUESTION_CONTINUE, SKIP_TEAM_CLICKED, STATE_ABOUT, STATE_APPLIED, STATE_QUESTION,
@@ -58,7 +59,7 @@ import { renderReviewScreen } from "./renderReviewScreen"
 // In the end, `Continue` clicks do not share the same semantics and should hence have separate handlers. If those
 // handlers share common code, that common code can always be factored out in a utility function.
 
-export const events = {
+export const eventsFactory = {
   // NOTE : The `FETCH_EV` event will be received by the state machine before any other event, as it should :
   // - All event factories are executed when the state machine is started
   // - `fetchUserApplicationModelData` return an observable which when subscribed immediately emits a value,
@@ -82,7 +83,7 @@ export const events = {
   [APPLICATION_COMPLETED]: applicationCompletedEventFactory
 };
 
-export const states = {
+const states = {
   [INIT_S]: '',
   [STATE_ABOUT]: '',
   [STATE_QUESTION]: '',
@@ -221,5 +222,12 @@ const entryActions = {
   [STATE_APPLIED]: renderAppliedScreen
 };
 
-export const transitions =
-  decorateWithEntryActions(transitionsWithoutRenderActions, states, entryActions, mergeOutputFn);
+const fsmWithoutRenderActions = {
+  initial_extended_state: {},
+  states,
+  events: keys(eventsFactory),
+  transitions : transitionsWithoutRenderActions
+};
+
+export const fsm = decorateWithEntryActions(fsmWithoutRenderActions, entryActions, mergeOutputFn);
+
