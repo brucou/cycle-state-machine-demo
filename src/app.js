@@ -32,12 +32,10 @@ const appSettings = {
   // NOTE: that is because rxjs v5 merge does not accept arrays anymore
   merge: function merge(arrayObs) {return $.merge(...arrayObs)},
   from: $.from,
-  subject_factory: () => {
-    const subject = new Rx.Subject();
-    // NOTE : this is intended for Rxjs v4-5!! but should work for most also
-    subject.emit = subject.next || subject.onNext;
-    return subject
-  },
+  map: (mapFn, obs) => obs.map(mapFn),
+  filter: (filterFn, obs) => obs.filter(filterFn),
+  flatMap : (fn, obs) => obs.flatMap(fn),
+  share: (obs) => obs.share(),
   userKey: fakeUserKey,
   opportunityKey: fakeOpportunityKey,
   projectKey: fakeProjectKey,
