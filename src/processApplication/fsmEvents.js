@@ -145,7 +145,6 @@ export function applicationCompletedEventFactory(sources, settings) {
 // Event guards
 
 export function hasApplied(model, eventData) {
-  void model;
   const userApplication = eventData.userApplication;
 
   if (userApplication) {
@@ -190,8 +189,6 @@ export const isStepTeams = isStep(STEP_TEAMS);
 export const isStepReview = isStep(STEP_REVIEW);
 
 export function isFormValid(model, eventData) {
-  void model;
-
   return pipe(values, all(isBoolean))(eventData.validationData)
 }
 

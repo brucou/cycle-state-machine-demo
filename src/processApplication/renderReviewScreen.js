@@ -35,7 +35,7 @@ export function renderReviewScreen(model) {
     : div('.c-application__error', '');
 
   return {
-    output: {
+    outputs: {
       DOM: div('#page', [
         renderHeader(projectName, projectDate),
         div(".ui.description", [

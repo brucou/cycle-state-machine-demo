@@ -3,7 +3,7 @@ import { YOU_SUCCESSFULLY_APPLIED } from "./properties"
 
 export function renderAppliedScreen() {
   return {
-    output: {
+    outputs: {
       DOM: div(".ui.raised.segment", [
         p([YOU_SUCCESSFULLY_APPLIED])
       ])

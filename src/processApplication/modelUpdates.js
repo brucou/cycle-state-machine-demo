@@ -5,7 +5,7 @@ import {
 } from './properties';
 import { assertContract } from "@rxcc/contracts"
 import { checkUserApplicationContracts } from '../domain/contracts';
-import { mergeModelUpdates } from "state-transducer"
+import { mergeModelUpdates, NO_OUTPUT } from "state-transducer"
 
 function _updateModelWithStepOnly(step, model, eventData) {
   return {
@@ -73,7 +73,7 @@ Please check fields for correctness vs. expected format
     }
   }
 
-  return { model_update: toJsonPatch('')(initialModel) };
+  return { model_update: toJsonPatch('')(initialModel), outputs: NO_OUTPUT };
 }
 
 export const initializeModelAndStepReview = mergeModelUpdates([
@@ -150,11 +150,11 @@ export const updateModelWithQuestionDataAndTeamsStep = mergeModelUpdates([
 
 function patchModelWithQuestionData(formData) {
   return flatten([
-      toJsonPatch('/userApplication/questions')(pick(questionFields, formData)),
-      addOpToJsonPatch('/userApplication/progress/step', STEP_TEAMS),
-      addOpToJsonPatch('/validationMessages', {}),
-      addOpToJsonPatch('/errorMessage', null),
-    ])
+    toJsonPatch('/userApplication/questions')(pick(questionFields, formData)),
+    addOpToJsonPatch('/userApplication/progress/step', STEP_TEAMS),
+    addOpToJsonPatch('/validationMessages', {}),
+    addOpToJsonPatch('/errorMessage', null),
+  ])
 }
 
 export function updateModelWithSelectedTeamData(model, eventData) {

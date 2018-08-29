@@ -69,7 +69,7 @@ function _makeRequestToUpdateUserApplication(nextStep, model, eventData) {
   newUserApplication.progress.step = nextStep;
 
   return {
-    output: {
+    outputs: {
       [DOMAIN_ACTION]: {
         context: USER_APPLICATION,
         command: UPDATE,
@@ -89,7 +89,7 @@ export function makeRequestToUpdateUserApplicationWithHasReviewed(model, eventDa
   newUserApplication.progress.step = STEP_REVIEW;
 
   return {
-    output: {
+    outputs: {
       [DOMAIN_ACTION]: {
         context: USER_APPLICATION,
         command: UPDATE,
@@ -106,7 +106,7 @@ export function makeRequestToUpdateUserApplicationWithHasApplied(model, eventDat
   newUserApplication.progress.hasApplied = true;
 
   return {
-    output: {
+    outputs: {
       [DOMAIN_ACTION]: {
         context: USER_APPLICATION,
         command: UPDATE,

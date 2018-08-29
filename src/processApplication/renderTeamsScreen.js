@@ -36,7 +36,7 @@ export function renderTeamScreen(model) {
     : div('.c-application__error', '');
 
   return {
-    output: {
+    outputs: {
       DOM: div('#page', [
         renderHeader(projectName, projectDate),
         renderTitle(projectName),

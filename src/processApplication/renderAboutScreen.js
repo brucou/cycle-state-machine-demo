@@ -39,7 +39,7 @@ export function renderAboutScreen(model, eventData, settings) {
     : div('.c-application__error', '');
 
   return {
-    output: {
+    outputs: {
       DOM: div('#page', [
         renderHeader(projectName, projectDate),
         renderTitle(projectName),
