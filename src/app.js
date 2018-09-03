@@ -28,13 +28,13 @@ function applyJSONpatch(model, modelUpdateOperations) {
 // - the machine itself
 // - the event factories - this was preferred for testing reasons, we thus get factories without closures
 const appSettings = {
-  updateModel : applyJSONpatch,
+  updateState: applyJSONpatch,
   // NOTE: that is because rxjs v5 merge does not accept arrays anymore
   merge: function merge(arrayObs) {return $.merge(...arrayObs)},
   from: $.from,
   map: (mapFn, obs) => obs.map(mapFn),
   filter: (filterFn, obs) => obs.filter(filterFn),
-  flatMap : (fn, obs) => obs.flatMap(fn),
+  flatMap: (fn, obs) => obs.flatMap(fn),
   share: (obs) => obs.share(),
   userKey: fakeUserKey,
   opportunityKey: fakeOpportunityKey,

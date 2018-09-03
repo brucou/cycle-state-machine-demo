@@ -4,7 +4,7 @@
  * specified state machine
  * @property {Array<EventLabel>} events
  * @property {Array<Transition>} transitions
- * @property {*} initial_extended_state
+ * @property {*} initialExtendedState
  */
 /**
  * @typedef {String} Event_Label
@@ -19,8 +19,8 @@
  * @typedef {function(model:*, event_data:*, settings:FSM_Settings) : Actions} ActionFactory
  */
 /**
- * @typedef {{model_update : Array<JSON_Patch_Operation>, output : *}} Actions The actions to be performed by the
- * state machine in response to a transition. `model_update` represents the state update for the variables
+ * @typedef {{updates : Array<JSON_Patch_Operation>, output : *}} Actions The actions to be performed by the
+ * state machine in response to a transition. `updates` represents the state update for the variables
  * of the extended state machine. `output` represents the output of the state machine passed to the API caller.
  */
 /**

@@ -129,14 +129,14 @@ test
 - from T(F) get a map GenMap of generator get :: ControlState -> Transition -> EventGenerator
 - Define a state machine :
   - initial extended state : PreT(F), GenMap, arrayOfEventSequence=[], edgeVisited 
-  F.initial_extended_state, F.adjacency_matrix i.e. getEdges:: ControlState -> Array<Transition>, 
+  F.initialExtendedState, F.adjacency_matrix i.e. getEdges:: ControlState -> Array<Transition>, 
   control_state_under_test : INIT_STATE
   - INIT_STATE -> GENERATE
     - extended state
     - action : update arrayOfEventSequence, edgeVisited
       - adjMat(control_state_under_test) -> array of transition for INIT_STATE
       - generated events = adjMat(...).forEach(transition => GenMap(control_state_under_test, tr)
-      (initial_extended_state))
+      (initialExtendedState))
 ```javascript
 generatedEvents.forEach(generatedEvent) => {}) 
                  isNull(generatedEvent) ? acc : acc.concat([[generatedEvent]])) // the event 

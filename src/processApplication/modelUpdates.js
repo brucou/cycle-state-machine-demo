@@ -9,7 +9,7 @@ import { mergeModelUpdates, NO_OUTPUT } from "state-transducer"
 
 function _updateModelWithStepOnly(step, model, eventData) {
   return {
-    model_update: flatten([addOpToJsonPatch('/userApplication/progress/step', step)])
+    updates: flatten([addOpToJsonPatch('/userApplication/progress/step', step)])
   }
 }
 
@@ -73,7 +73,7 @@ Please check fields for correctness vs. expected format
     }
   }
 
-  return { model_update: toJsonPatch('')(initialModel), outputs: NO_OUTPUT };
+  return { updates: toJsonPatch('')(initialModel), outputs: NO_OUTPUT };
 }
 
 export const initializeModelAndStepReview = mergeModelUpdates([
@@ -110,7 +110,7 @@ export function updateModelWithAboutData(model, eventData) {
   const formData = eventData.formData;
 
   return {
-    model_update: flatten([
+    updates: flatten([
       toJsonPatch('/userApplication/about/aboutYou')(pick(aboutYouFields, formData)),
       toJsonPatch('/userApplication/about/personal')(pick(personalFields, formData)),
     ])
@@ -119,7 +119,7 @@ export function updateModelWithAboutData(model, eventData) {
 
 export function updateModelWithEmptyErrorMessages(model, eventData) {
   return {
-    model_update: flatten([toJsonPatch('/validationMessages')({}), toJsonPatch('/errorMessage')(null)])
+    updates: flatten([toJsonPatch('/validationMessages')({}), toJsonPatch('/errorMessage')(null)])
   }
 }
 
@@ -127,7 +127,7 @@ export function updateModelWithQuestionDataAndStepReview(model, eventData) {
   const formData = eventData.formData;
 
   return {
-    model_update: flatten([
+    updates: flatten([
       patchModelWithQuestionData(formData),
       addOpToJsonPatch('/userApplication/progress/step', STEP_REVIEW),
     ])
@@ -138,7 +138,7 @@ export function updateModelWithQuestionData(model, eventData) {
   const formData = eventData.formData;
 
   return {
-    model_update: patchModelWithQuestionData(formData)
+    updates: patchModelWithQuestionData(formData)
   }
 }
 
@@ -161,7 +161,7 @@ export function updateModelWithSelectedTeamData(model, eventData) {
   const selectedTeamIndex = eventData;
 
   return {
-    model_update: flatten([
+    updates: flatten([
       addOpToJsonPatch('/userApplication/progress/latestTeamIndex', selectedTeamIndex),
       addOpToJsonPatch('/userApplication/progress/step', STEP_TEAM_DETAIL),
     ])
@@ -178,7 +178,7 @@ export function updateModelWithSkippedTeamData(model, eventData) {
   const nextTeamIndex = (latestTeamIndex + 1) % numberOfTeams;
 
   return {
-    model_update: flatten([
+    updates: flatten([
       addOpToJsonPatch('/validationMessages', {}),
       addOpToJsonPatch('/userApplication/progress/latestTeamIndex', nextTeamIndex),
       addOpToJsonPatch('/userApplication/progress/step', STEP_TEAM_DETAIL),
@@ -198,7 +198,7 @@ export function updateModelWithJoinedOrUnjoinedTeamData(model, eventData) {
   const nextTeamIndex = (latestTeamIndex + 1) % numberOfTeams;
 
   return {
-    model_update: flatten([
+    updates: flatten([
       addOpToJsonPatch('/validationMessages', {}),
       addOpToJsonPatch('/userApplication/progress/latestTeamIndex', nextTeamIndex),
       addOpToJsonPatch('/userApplication/progress/step', STEP_TEAM_DETAIL),
@@ -215,7 +215,7 @@ export const updateModelWithTeamDetailAnswerAndNextStep = mergeModelUpdates([
 
 export function updateModelWithStepAndHasReviewed(model, eventData) {
   return {
-    model_update: flatten([
+    updates: flatten([
       addOpToJsonPatch('/userApplication/progress/step', STEP_REVIEW),
       addOpToJsonPatch('/userApplication/progress/hasReviewedApplication', true),
     ])
@@ -224,7 +224,7 @@ export function updateModelWithStepAndHasReviewed(model, eventData) {
 
 export function updateModelWithAppliedData(model, eventData) {
   return {
-    model_update: flatten([addOpToJsonPatch('/userApplication/progress/hasApplied', true),])
+    updates: flatten([addOpToJsonPatch('/userApplication/progress/hasApplied', true),])
   }
 }
 
@@ -232,7 +232,7 @@ function updateModelWithValidationData(model, eventData) {
   const { validationData } = eventData;
 
   return {
-    model_update: toJsonPatch('/validationMessages')(validationData)
+    updates: toJsonPatch('/validationMessages')(validationData)
   }
 }
 
@@ -243,7 +243,7 @@ function updateModelWithTeamDetailAnswerData(model, eventData) {
   const { answer } = eventData;
 
   return {
-    model_update: flatten([
+    updates: flatten([
       addOpToJsonPatch(`/userApplication/teams/${selectedTeamKey}/answer`, answer),
     ])
   }

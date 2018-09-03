@@ -223,7 +223,7 @@ const entryActions = {
 };
 
 const fsmWithoutRenderActions = {
-  initial_extended_state: {},
+  initialExtendedState: {},
   states,
   events: keys(eventsFactory),
   transitions : transitionsWithoutRenderActions
