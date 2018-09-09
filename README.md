@@ -84,12 +84,16 @@ involves only a finite subset of the test space. How to pick that subset in a wa
 **confidence** level is the crux of the matter and conditions the testing strategy to adopt.
 
 Because our model is both specification and implementation target, testing our model 
-involves nothing more than **testing the different paths in the model**. Creating 
+involves **testing the different paths in the model**[^2]. Creating  
 the abstract test suite is an easily automatable process of simply traversing through the states and
 transitions in the model, until the wanted model coverage is met. The abstract test suite can be 
 reified into executable concrete test suites, and actual outputs (from the model implementation) 
 are compared manually to expected outputs (derived from the informal requirements which originated 
 the model).
+
+[^2]: Those paths can be split into control paths and data paths (the latter relating to the set of 
+values the extended state can take, and addressed by [**data coverage** criteria](http://www.cse.chalmers.se/edu/year/2012/course/DIT848/files/06-Selecting-Tests.pdf)). We will 
+address only the control paths. 
 
 Miscellaneous model coverage criteria are commonly used when designing a test suite with the help 
 of a model:
@@ -103,7 +107,7 @@ the model at least once. This automatically entails also all states coverage.
 Reaching all transitions coverage doesn’t require that any specific sequence is
 executed, as long as all transitions are executed once. A bug that is revealed
 only when a specific sequence of transitions is executed, is missed even in this
-coverage level. The coverage can be increased by requiring 
+coverage level. The coverage can be increased by requiring :
 - **All n-transition coverage**, meaning that all possible transition sequences of `n` or more 
 transitions are included in the test suite.
 - **All path coverage** is achieved when all possible branches of the underlying model graph are 
@@ -114,6 +118,13 @@ loops in the model
 
 Using a dedicated [graph testing library](https://github.com/brucou/graph-adt), we computed the 
 abstract test suite for the *All one-loop path* criteria and ended up with around 1.500 tests!! 
+We reproduce below extract of the abstract test suite. A test is a sequence of inputs. Every line 
+below is a the sequence of control states the machine go through based on the sequence of inputs it 
+receives. Note that you can have repetition of control states, anytime a transition happens 
+between a state and itself. Because we have used a *All one-loop path* criteria to enumerate the 
+paths to test, every `Team_Detail` loop corresponds to a different edge in the model graph. Here 
+such loop transitions could be `Skip Team` or `Join Team (valid form)` or `Join Team (invalid 
+form)`. We can see from the extract how the graph search works (depth-first search).
 
 ```javascript
 ["nok","INIT_S","Review","About","Review","Question","Review","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","State_Applied"], 
@@ -147,7 +158,33 @@ abstract test suite for the *All one-loop path* criteria and ended up with aroun
     tools. Addison-Wesley Longman Publishing Co., Inc., Boston, MA,
     USA, 1999.
 
-### Implementation and results
+### Test selection and implementation
+As we mentioned, even for a relatively simple reactive system, we handed up with 1.000+ tests to 
+exhaust the paths between initial state and terminal state, and that even with excluding n-loops.
+
+We finally selected only 6 tests from the **All path coverage** set :
+
+```javascript
+["nok","INIT_S","About","About","Question","Question","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","Question","Question","Review","About","About","Review","State_Applied"],
+["nok","INIT_S","Question","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","State_Applied"],
+["nok","INIT_S","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","State_Applied"],
+["nok","INIT_S","Review","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","State_Applied"] 
+
+```
+
+Those tests :
+
+- fulfill the *All transitions coverage* criteria: 4 input sequences are sufficient
+- involves all the loops in the model graph (cf. first test sequence)
+- insist slightly more on the core functionality of the system, which is to apply to volunteer 
+teams (e.g. `TEAM_DETAIL` loop transitions)
+  - the transition space for that control state is the permutations of `Join(Invalid Form) x Skip x 
+  Join(Valid Form)`, with `|set| = 2` for `Join` and `Skip` (an event triggering the associated 
+  transition happens or not). We have `|Join(Invalid Form) x Skip x Join(Valid Form)| = 8`, so 
+  `3! x 8 = 48` transition permutations for that control state. Rather than exhaustively testing 
+  all permutations, we pick 4 of them, fit into the 4 input sequences that are necessary to cover
+  the model.
+
 cf. test repository
 
 
@@ -163,7 +200,7 @@ automatically generated. Typically it is possible to generate test input sequenc
  by using the model specification of the inputs it accepts. It is not however possible in general
   to check automatically the correctness of the output. First of all, the input sequences derived
    might be wrong, if the model specifies them incorrectly. Second, if we had a computation which
-    could accurately predict an output sequnce for every input sequence (what is termed an 
+    could accurately predict an output sequence for every input sequence (what is termed an 
     *oracle*), then we can use **that** as a model, and there is no need to test.
 
 The bottom line is, we have informal UI requirements, we produce a state-machine-based 
