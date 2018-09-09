@@ -163,7 +163,6 @@ We reproduce below extract of the abstract test suite:
 
 ```
 
-
 ### Test selection 
 As we mentioned, even for a relatively simple reactive system, we handed up with 1.000+ tests to 
 exhaust the paths between initial state and terminal state, and that even with excluding n-loops.
@@ -213,38 +212,6 @@ cf. test repository
 Note that once the model is validated, we can use it as an oracle. This means for instance that we 
 can take any input sequence, run it through the model, gather the resulting outputs, generate the
  corresponding BDD test, and run them. Most of this process can be automatized.
-
-### Data coverage
-A validated model can be used to generate randomized input sequences. To that purpose the input 
-sequence must be parameterized, and the 
-
- - the set of validated tests can be cherry picked, parameterized and used to generate higher 
- coverage of the extended state of the state machine model, this time with an oracle derived from
-  the result of the non-parameterized version of the test. **TODO explain bettr**
- 
-We will use the state machine as a model, and automatically generate input tests from it.
-**explain EFSM should add some data-flow testing, i.e. generators which randomizes the data - or
- randomize between a predefined set**
-
-### Test execution
-
-**coming soon I swear**
-
-References :
-
-- [Model Based Testing - An Evaluation](http://www.diva-portal.org/smash/get/diva2:831658/FULLTEXT01.pdf)
-  - advantages and disadvantages of MBT
-  - Sometime it happens that a behavioral model contains error. So the model must be debugged! 
-  prior to generate tests
-- [](http://www.axini.com/wp-content/uploads/Ver17Model-Based-Unit-Testing-using0ADecision-Tables.pdf)
-  - advantages of MBT, more succintly presented
-  - model-based testing process
-  - 3.3.3 Function specifications - difference between model-driven (use for specification i.e. 
-  implementation) and model-based (used for testing for instance, does not need same level of 
-  details)
-  -  Testing strategy ; coverage etc.
-  - in general a pretty clearly explained thesis, even if the decision tables approach (2017 
-  rally?) seems inferior to me to state machine modelling
 
 ## Implementation
 We use the stream-oriented `cyclejs` framework to showcase our [state machine library](https://github.com/brucou/state-transducer). To that purpose, we use the `makeStreamingStateMachine` from our library to match a stream of actions to a stream of events. 
