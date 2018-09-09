@@ -1,4 +1,4 @@
-import { both, complement, keys, T } from 'ramda';
+import { both, complement, keys } from 'ramda';
 import { decorateWithEntryActions, identity, INIT_EVENT, INIT_STATE } from 'state-transducer'
 // import { decorateWithEntryActions, identity, INIT_EVENT, INIT_STATE } from '../../../state-transducer/src'
 import {
@@ -95,13 +95,13 @@ const states = {
 
 /** @type Array<Transition>*/
 const transitionsWithoutRenderActions = [
-  { from: INIT_STATE, event: INIT_EVENT, guards: [{ predicate: T, to: INIT_S, action: identity }] },
+  { from: INIT_STATE, event: INIT_EVENT, to: INIT_S, action: identity },
   {
     from: INIT_S, event: FETCH_EV, guards: [
-      { predicate: hasApplied, to: STATE_REVIEW, action: initializeModelAndStepReview },
-      { predicate: isStepAbout, to: STATE_ABOUT, action: initializeModel },
-      { predicate: isStepQuestion, to: STATE_QUESTION, action: initializeModel },
-      { predicate: isStepTeams, to: STATE_TEAMS, action: initializeModel },
+      // { predicate: hasApplied, to: STATE_REVIEW, action: initializeModelAndStepReview },
+      // { predicate: both(complement(hasApplied), isStepAbout), to: STATE_ABOUT, action: initializeModel },
+      // { predicate: isStepQuestion, to: STATE_QUESTION, action: initializeModel },
+      // { predicate: isStepTeams, to: STATE_TEAMS, action: initializeModel },
       { predicate: isStepReview, to: STATE_REVIEW, action: initializeModel },
     ]
   },
@@ -117,11 +117,7 @@ const transitionsWithoutRenderActions = [
         to: STATE_REVIEW,
         action: updateUserAppAndRenderReviewStep
       },
-      {
-        predicate: T,
-        to: STATE_ABOUT,
-        action: updateModelWithAboutStepValidationMessages
-      }
+      { predicate: complement(isFormValid), to: STATE_ABOUT, action: updateModelWithAboutStepValidationMessages }
     ]
   },
   {
@@ -136,35 +132,24 @@ const transitionsWithoutRenderActions = [
         to: STATE_REVIEW,
         action: updateUserAppAndRenderReviewStepR
       },
-      {
-        predicate: T,
-        to: STATE_QUESTION,
-        action: updateModelWithQuestionValidationMessages
-      }
+      { predicate: complement(isFormValid), to: STATE_QUESTION, action: updateModelWithQuestionValidationMessages }
     ]
   },
-  {
-    from: STATE_TEAMS,
-    event: TEAM_CLICKED,
-    guards: [{ predicate: T, to: STATE_TEAM_DETAIL, action: updateModelWithSelectedTeamData }]
-  },
-  {
-    from: STATE_TEAM_DETAIL,
-    event: SKIP_TEAM_CLICKED,
-    guards: [{ predicate: T, to: STATE_TEAM_DETAIL, action: updateModelWithSkippedTeamData }]
-  },
+  { from: STATE_TEAMS, event: TEAM_CLICKED, to: STATE_TEAM_DETAIL, action: updateModelWithSelectedTeamData },
+  { from: STATE_TEAM_DETAIL, event: SKIP_TEAM_CLICKED, to: STATE_TEAM_DETAIL, action: updateModelWithSkippedTeamData },
   {
     from: STATE_TEAM_DETAIL,
     event: JOIN_OR_UNJOIN_TEAM_CLICKED,
     guards: [
       { predicate: isFormValid, to: STATE_TEAM_DETAIL, action: updateModelWithJoinedOrUnjoinedTeamData },
-      { predicate: T, to: STATE_TEAM_DETAIL, action: updateModelWithTeamDetailValidationMessages }
+      { predicate: complement(isFormValid), to: STATE_TEAM_DETAIL, action: updateModelWithTeamDetailValidationMessages }
     ]
   },
   {
     from: STATE_TEAM_DETAIL,
     event: BACK_TEAM_CLICKED,
-    guards: [{ predicate: T, to: STATE_TEAMS, action: updateModelWithTeamDetailAnswerAndNextStep }]
+    to: STATE_TEAMS,
+    action: updateModelWithTeamDetailAnswerAndNextStep
   },
   {
     from: STATE_TEAMS,
@@ -175,41 +160,17 @@ const transitionsWithoutRenderActions = [
         to: STATE_REVIEW,
         action: updateUserAppWithHasReviewed
       },
-      { predicate: T, to: STATE_TEAM_DETAIL, action: updateModelWithStepAndHasReviewed }
-    ]
-  },
-  {
-    from: STATE_REVIEW,
-    event: CHANGE_ABOUT,
-    guards: [
-      { predicate: T, to: STATE_ABOUT, action: updateModelWithStepOnly(STEP_ABOUT) },
-    ]
-  },
-  {
-    from: STATE_REVIEW,
-    event: CHANGE_QUESTION,
-    guards: [
-      { predicate: T, to: STATE_QUESTION, action: updateModelWithStepOnly(STEP_QUESTION) },
-    ]
-  },
-  {
-    from: STATE_REVIEW,
-    event: CHANGE_TEAMS,
-    guards: [
-      { predicate: T, to: STATE_TEAMS, action: updateModelWithStepOnly(STEP_TEAMS) },
-    ]
-  },
-  {
-    from: STATE_REVIEW,
-    event: APPLICATION_COMPLETED,
-    guards: [
       {
-        predicate: T,
-        to: STATE_APPLIED,
-        action: updateUserAppWithHasApplied
-      },
+        predicate: complement(hasJoinedAtLeastOneTeam),
+        to: STATE_TEAMS,
+        action: identity
+      }
     ]
   },
+  { from: STATE_REVIEW, event: CHANGE_ABOUT, to: STATE_ABOUT, action: updateModelWithStepOnly(STEP_ABOUT) },
+  { from: STATE_REVIEW, event: CHANGE_QUESTION, to: STATE_QUESTION, action: updateModelWithStepOnly(STEP_QUESTION) },
+  { from: STATE_REVIEW, event: CHANGE_TEAMS, to: STATE_TEAMS, action: updateModelWithStepOnly(STEP_TEAMS) },
+  { from: STATE_REVIEW, event: APPLICATION_COMPLETED, to: STATE_APPLIED, action: updateUserAppWithHasApplied },
 ];
 
 const entryActions = {
@@ -226,7 +187,7 @@ const fsmWithoutRenderActions = {
   initialExtendedState: {},
   states,
   events: keys(eventsFactory),
-  transitions : transitionsWithoutRenderActions
+  transitions: transitionsWithoutRenderActions
 };
 
 export const fsm = decorateWithEntryActions(fsmWithoutRenderActions, entryActions, mergeOutputFn);

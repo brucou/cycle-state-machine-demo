@@ -5,14 +5,17 @@
     "start": "cycle-scripts start",
     "test": "cycle-scripts test",
     "build": "cycle-scripts build",
-    "eject": "cycle-scripts eject"
+    "eject": "cycle-scripts eject",
+    "parcel": "parcel tests/parcel-index.html"
   },
   "cca": {
     "language": "javascript",
     "streamLib": "rxjs"
   },
   "devDependencies": {
-    "cycle-scripts": "2.1.0"
+    "cycle-scripts": "2.1.0",
+    "parcel-bundler": "^1.9.5",
+    "qunitjs": "^1.20.0"
   },
   "dependencies": {
     "@cycle/dom": "18.3.0",
@@ -20,9 +23,10 @@
     "rxjs": "5.4.3",
     "ramda": "^0.25.0",
     "json-patch-es6": "^2.0.6",
-    "state-transducer": "^0.7.0",
     "@rxcc/contracts": "^0.1.11",
     "@rxcc/utils": "^0.1.8",
-    "localforage": "^1.7.0"
+    "localforage": "^1.7.0",
+    "state-transducer": "^0.7.8",
+    "fp-rosetree": "^0.6.1"
   }
 }

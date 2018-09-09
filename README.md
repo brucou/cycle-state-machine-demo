@@ -58,14 +58,98 @@ Note that we could have included processing of the fetch event inside our state 
 ![demo](public/assets/images/animated_demo.gif)
 
 ## Tests
+### Test strategy
 It is important to understand that the defined state machine acts as a precise specification for 
-the reactive system under development. It is called a model of the reactive system for this 
-reason. This model can double as implementation for that reactive system, in fact as 
-implementation for the part of the reactive system it modelizes. For instance, our model does not
- modelize actual actions, nor the interfaced systems, e.g. HTTP requests, the network, etc. We 
- have chosen to modelize only the input/output (event/action) relation, under the hypothesis that 
- the interfaced systems can be tested separately, for instance during acceptance or 
- integration tests.
+the reactive system under development. The model is precise enough to double as implementation for 
+that reactive system (partial implementation, as our model does not modelize actual actions, nor 
+ the interfaced systems, e.g. HTTP requests, the network, etc.), but is primarily a specification
+  of the system under study. In the context of this illustrative example, we used our state 
+  transducer library to actually implement the specified state machine.
+ 
+ It ensues two consequences for our tests :
+ - the effectful part of the reactive system must be tested separately, for instance during 
+ end-to-end or acceptance tests. 
+- assuming that our library is correct (!), **testing the implementation is testing the model**, 
+as the correctness of any one means the correctness of the other.
+
+We thus need to test the implementation to discover possible mistakes in our model. The only way 
+to do this is manually : we cannot use the outputs produced by the model as oracle, as they are 
+precisely what is being tested against.
+  
+That is the first point. The second point is that the test space for our implementation consists 
+of any sequence of events admitted by the machine (assuming that events not accepted by the 
+machine have the same effect that if they did not exist in the first place : the machine ignores 
+them). That sequence is essentially infinite, so any testing of such reactive system necessarily 
+involves only a finite subset of the test space. How to pick that subset in a way to generate a minimum 
+**confidence** level is the crux of the matter and conditions the testing strategy to adopt.
+
+Because our model is both specification and implementation target, testing our model 
+involves nothing more than **testing the different paths in the model**. Creating 
+the abstract test suite is an easily automatable process of simply traversing through the states and
+transitions in the model, until the wanted model coverage is met. The abstract test suite can be 
+reified into executable concrete test suites, and actual outputs (from the model implementation) 
+are compared manually to expected outputs (derived from the informal requirements which originated 
+the model).
+
+Miscellaneous model coverage criteria are commonly used when designing a test suite with the help 
+of a model:
+
+- **All states coverage** is achieved when the test reaches every state in the model
+at least once. This is usually not a sufficient level of coverage, because behavior
+faults are only accidentally found. If there is a bug in a transition between a
+specific state pair, it can be missed even if all states coverage is reached.
+- **All transitions coverage** is achieved when the test executes every transition in
+the model at least once. This automatically entails also all states coverage.
+Reaching all transitions coverage doesn’t require that any specific sequence is
+executed, as long as all transitions are executed once. A bug that is revealed
+only when a specific sequence of transitions is executed, is missed even in this
+coverage level. The coverage can be increased by requiring 
+- **All n-transition coverage**, meaning that all possible transition sequences of `n` or more 
+transitions are included in the test suite.
+- **All path coverage** is achieved when all possible branches of the underlying model graph are 
+taken (**exhaustive** test of the control structure). This corresponds to the previous coverage 
+criteria for a high enough `n`
+- **All one-loop path**, and **All loop-free paths** are more restrictive criteria focusing on 
+loops in the model
+
+Using a dedicated [graph testing library](https://github.com/brucou/graph-adt), we computed the 
+abstract test suite for the *All one-loop path* criteria and ended up with around 1.500 tests!! 
+
+```javascript
+["nok","INIT_S","Review","About","Review","Question","Review","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","State_Applied"], 
+["nok","INIT_S","Review","About","Review","Question","Review","Teams","Team_Detail","Team_Detail","Team_Detail","Teams","Review","State_Applied"], 
+["nok","INIT_S","Review","About","Review","Question","Review","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","State_Applied"], 
+["nok","INIT_S","Review","About","Review","Question","Review","Teams","Team_Detail","Team_Detail","Team_Detail","Teams","Review","State_Applied"], 
+["nok","INIT_S","Review","About","Review","Question","Review","Teams","Team_Detail","Team_Detail","Teams","Review","State_Applied"], 
+["nok","INIT_S","Review","About","Review","Question","Review","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","State_Applied"], 
+["nok","INIT_S","Review","About","Review","Question","Review","Teams","Team_Detail","Team_Detail","Team_Detail","Teams","Review","State_Applied"], 
+["nok","INIT_S","Review","About","Review","Question","Review","Teams","Team_Detail","Team_Detail","Teams","Review","State_Applied"], 
+["nok","INIT_S","Review","About","Review","Question","Review","Teams","Team_Detail","Teams","Review","State_Applied"], 
+["nok","INIT_S","Review","About","Review","Question","Review","Teams","Review","State_Applied"], 
+["nok","INIT_S","Review","About","Review","Question","Review","State_Applied"], 
+["nok","INIT_S","Review","About","Review","Question","Question","Review","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","State_Applied"],
+... 
+["nok","INIT_S","Review","State_Applied"]
+["nok","INIT_S","About","Question","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","About","Review","Question","Review","State_Applied"],
+["nok","INIT_S","About","Question","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","About","Review","Question","Question","Review","State_Applied"],
+["nok","INIT_S","About","Question","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","About","Review","State_Applied"],
+...
+["nok","INIT_S","Question","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","About","Review","Question","Review","State_Applied"],
+["nok","INIT_S","Question","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","About","Review","Question","Question","Review","State_Applied"],
+["nok","INIT_S","Question","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","About","Review","State_Applied"],
+["nok","INIT_S","Question","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","About","About","Review","Question","Review","State_Applied"],
+...
+
+```
+
+
+[^1]: Bin99 Binder, R. V., Testing object-oriented systems: models, patterns, and
+    tools. Addison-Wesley Longman Publishing Co., Inc., Boston, MA,
+    USA, 1999.
+
+### Implementation and results
+cf. test repository
+
 
 So we went from an informal specification of our reactive system to a precise specification of 
 such. That is great and desirable but then we have to actually check that we have done so without

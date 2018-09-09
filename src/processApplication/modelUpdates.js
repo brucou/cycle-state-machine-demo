@@ -1,5 +1,5 @@
 import { curry, flatten, keys, pick, reduce } from 'ramda';
-import { addOpToJsonPatch, getSelectedKey, toJsonPatch } from '../helpers';
+import { addOpToJsonPatch, getSelectedKey, pojoToJsonPatch } from '../helpers';
 import {
   aboutYouFields, personalFields, questionFields, STEP_ABOUT, STEP_QUESTION, STEP_REVIEW, STEP_TEAM_DETAIL, STEP_TEAMS
 } from './properties';
@@ -73,7 +73,7 @@ Please check fields for correctness vs. expected format
     }
   }
 
-  return { updates: toJsonPatch('')(initialModel), outputs: NO_OUTPUT };
+  return { updates: pojoToJsonPatch('')(initialModel), outputs: NO_OUTPUT };
 }
 
 export const initializeModelAndStepReview = mergeModelUpdates([
@@ -111,15 +111,15 @@ export function updateModelWithAboutData(model, eventData) {
 
   return {
     updates: flatten([
-      toJsonPatch('/userApplication/about/aboutYou')(pick(aboutYouFields, formData)),
-      toJsonPatch('/userApplication/about/personal')(pick(personalFields, formData)),
+      pojoToJsonPatch('/userApplication/about/aboutYou')(pick(aboutYouFields, formData)),
+      pojoToJsonPatch('/userApplication/about/personal')(pick(personalFields, formData)),
     ])
   }
 }
 
 export function updateModelWithEmptyErrorMessages(model, eventData) {
   return {
-    updates: flatten([toJsonPatch('/validationMessages')({}), toJsonPatch('/errorMessage')(null)])
+    updates: flatten([pojoToJsonPatch('/validationMessages')({}), pojoToJsonPatch('/errorMessage')(null)])
   }
 }
 
@@ -150,7 +150,7 @@ export const updateModelWithQuestionDataAndTeamsStep = mergeModelUpdates([
 
 function patchModelWithQuestionData(formData) {
   return flatten([
-    toJsonPatch('/userApplication/questions')(pick(questionFields, formData)),
+    pojoToJsonPatch('/userApplication/questions')(pick(questionFields, formData)),
     addOpToJsonPatch('/userApplication/progress/step', STEP_TEAMS),
     addOpToJsonPatch('/validationMessages', {}),
     addOpToJsonPatch('/errorMessage', null),
@@ -232,7 +232,7 @@ function updateModelWithValidationData(model, eventData) {
   const { validationData } = eventData;
 
   return {
-    updates: toJsonPatch('/validationMessages')(validationData)
+    updates: pojoToJsonPatch('/validationMessages')(validationData)
   }
 }
 

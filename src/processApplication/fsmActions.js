@@ -82,7 +82,7 @@ function _makeRequestToUpdateUserApplication(nextStep, model, eventData) {
 export const makeRequestToUpdateUserApplication = curry(_makeRequestToUpdateUserApplication)
 
 export function makeRequestToUpdateUserApplicationWithHasReviewed(model, eventData) {
-  const formData = eventData.formData;
+  const formData = eventData && eventData.formData;
   const { userApplication } = model;
   const newUserApplication = getUserApplicationUpdates(formData, userApplication);
   newUserApplication.progress.hasReviewedApplication = true;
@@ -100,7 +100,7 @@ export function makeRequestToUpdateUserApplicationWithHasReviewed(model, eventDa
 }
 
 export function makeRequestToUpdateUserApplicationWithHasApplied(model, eventData) {
-  const formData = eventData.formData;
+  const formData = eventData && eventData.formData;
   const { userApplication } = model;
   const newUserApplication = getUserApplicationUpdates(formData, userApplication);
   newUserApplication.progress.hasApplied = true;
