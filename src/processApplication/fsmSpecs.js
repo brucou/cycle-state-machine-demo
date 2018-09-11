@@ -98,10 +98,10 @@ const transitionsWithoutRenderActions = [
   { from: INIT_STATE, event: INIT_EVENT, to: INIT_S, action: identity },
   {
     from: INIT_S, event: FETCH_EV, guards: [
-      // { predicate: hasApplied, to: STATE_REVIEW, action: initializeModelAndStepReview },
-      // { predicate: both(complement(hasApplied), isStepAbout), to: STATE_ABOUT, action: initializeModel },
-      // { predicate: isStepQuestion, to: STATE_QUESTION, action: initializeModel },
-      // { predicate: isStepTeams, to: STATE_TEAMS, action: initializeModel },
+      { predicate: hasApplied, to: STATE_REVIEW, action: initializeModelAndStepReview },
+      { predicate: both(complement(hasApplied), isStepAbout), to: STATE_ABOUT, action: initializeModel },
+      { predicate: isStepQuestion, to: STATE_QUESTION, action: initializeModel },
+      { predicate: isStepTeams, to: STATE_TEAMS, action: initializeModel },
       { predicate: isStepReview, to: STATE_REVIEW, action: initializeModel },
     ]
   },

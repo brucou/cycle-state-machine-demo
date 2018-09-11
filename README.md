@@ -85,9 +85,9 @@ involves only a finite subset of the test space. How to pick that subset in a wa
 **confidence** level is the crux of the matter and conditions the testing strategy to adopt.
 
 Because our model is both specification and implementation target, testing our model 
-involves **testing the different paths in the model**[^1]. Creating  
-the abstract test suite is an easily automatable process of simply traversing through the states and
-transitions in the model, until the wanted model coverage is met. The abstract test suite can be 
+involves **testing the different paths in the model**[^1]. Creating the abstract test suite  is 
+an easily automatable process of simply traversing through the states and transitions in the 
+model, until the wanted model coverage is met. The abstract test suite can be 
 reified into executable concrete test suites, and actual outputs (from the model implementation) 
 are compared manually to expected outputs (derived from the informal requirements which originated 
 the model).
