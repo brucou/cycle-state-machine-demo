@@ -1,3 +1,3 @@
 import './app.specs'
 // import './jsonpatch.specs'
-QUnit.dump.maxDepth = 10;
+QUnit.dump.maxDepth = 15;

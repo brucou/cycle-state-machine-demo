@@ -119,7 +119,6 @@ export function renderReviewScreen(model) {
               i(`${USER_APPLICATION_REVIEW_TEAMS_SELECTOR}.right.floated.edit.icon`),
               div(".header", [`Team selection`]),
               div(".ui.list",
-                // TODO : should only display those teams which has been joined
                 values(mapObjIndexed((team, teamKey) => {
                   const { description, name, question, hasBeenJoined, answer } = team;
 

@@ -172,9 +172,9 @@ transitions taken:
 
 ```javascript
 ["nok","INIT_S","About","About","Question","Question","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","Question","Review","About","Review","State_Applied"],
-["nok","INIT_S","Question","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","State_Applied"],
-["nok","INIT_S","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","State_Applied"],
-["nok","INIT_S","Review","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","State_Applied"] 
+["nok","INIT_S","Question","Review","State_Applied"],
+["nok","INIT_S","Teams","State_Applied"],
+["nok","INIT_S","Review","Teams","State_Applied"]
 
 ```
 
@@ -184,12 +184,11 @@ Those tests :
 - involves all the loops in the model graph (cf. first test sequence)
 - insist slightly more on the core functionality of the system, which is to apply to volunteer 
 teams (e.g. `TEAM_DETAIL` loop transitions)
-  - the transition space for that control state is the permutations of `Join(Invalid Form) x Skip x 
-  Join(Valid Form)`, with `|set| = 2` for `Join` and `Skip` (an event triggering the associated 
-  transition happens or not). We have `|Join(Invalid Form) x Skip x Join(Valid Form)| = 8`, so 
-  `3! x 8 = 48` transition permutations for that control state. Rather than exhaustively testing 
-  all permutations, we pick 4 of them, fit into the 4 input sequences that are necessary to cover
-  the model.
+  - the transition space for that control state is the 0,1,2,3 picks from `Join(Invalid Form) x 
+  Skip x Join(Valid Form)`. Some quick calculus gives us `3! x 8 / 3 = 16` admissible transition 
+  sequences for that control state. We exhaustively test all such permutations.
+- hence total `16 + 4 = 20` tests (we do not reuse the 4 sequences which cover the model, it is 
+actually simpler to write separated tests)
 
 In summary the process is :
 
@@ -208,7 +207,31 @@ transducers from our library are causal functions, i.e. function whose outputs d
 
 cf. test repository
 
-### Integration tests
+### Test results
+We have 1 test failing!! We found one bug! The bug happens when we have one subscribed team, with
+ a valid answer, then we delete that answer, and return back to the `Teams` screen. Because that 
+ team remains subscribed, we can proceed to the `Review` screen. However, we violate the 
+ application invariant which is that all subscribed teams must have non-empty answers! The issue 
+ lies in the fact that the `Back` button registers the empty answer without checking that it is 
+ indeed a valid answer. We did input validation on the `Join` button, but forget to do it on the 
+ `Back` button. Actually, looking back at the application, we also forgot to do it on the `Skip` 
+ button!! Note that our tests did not allow us to find the second bug, as we did not test a `Skip` 
+ button click with an empty answer. 
+ 
+ There are two learnings to be extracted from this. First, we have to test the model manually, as
+  we might inadvertently have made mistakes in expression the control flow of the application (here
+   we missed a guard). Second, even if we would the control flow paths exhaustively, we are still 
+   open to bugs coming from the dataflow paths that we have not tested: the tests we wrote test 
+   only **ONE** given combination of data. We have no guarantee that they would pass for another
+    combination of application data (here empty answer on clicking `Skip` button).
+
+**TODO** explain data coverage, and the hypothesis of data boundaries etc.
+ 
+TODO : explain the back bug, the skip possible bug that we haven't tested (similar to the back 
+bug), coming from the UX requirement to keep trace of data entered by the user even if invalid or
+ team is skipped/unjoined
+
+## Integration tests
 Note that once the model is validated, we can use it as an oracle. This means for instance that we 
 can take any input sequence, run it through the model, gather the resulting outputs, generate the
  corresponding BDD test, and run them. Most of this process can be automatized.
@@ -226,3 +249,40 @@ that branch.
 
 # Second iteration
 **coming soon**
+
+# Conclusion
+User interfaces are notoriously difficult to implement. 
+
+First of all, good UX/UI emerge from an iterative requirements refinement process with end users,
+ which might not even be aware of what they want. Iteration cycles must be kept short, so that 
+ there may be many.  During that process, the collected requirements (should) gain in formality 
+ and precision. 
+ State machines are an excellent tool for **formalizing precise requirements**. The formalism 
+ removes ambiguity from the requirements by forcing to specify **unequivocally and entirely** 
+ events, actions, conditions for actions, and variables involved in the user interface behavior. 
+ 
+ Additionally, state machines can be **visualized in an intuitive way** so they can act as a 
+ **communication tool between stakeholders**, bridging the gap between users, designers and 
+ developers, and further speeding up the iteration cycles. As we have seen in the example, the 
+ designer's user flows are state machines in disguise.
+   
+ Lastly, the specifications obtained in the shape of a state machine can be turned into an 
+ **executable model of the user interface behaviour**. That model can be run to generate test 
+ input sequences. The produced outputs can be used to verify the model, or generate concrete 
+ integration tests to verify the user interface. **Automatability of testing** is not the only 
+ gain. 
+ Model-based testing allows to select from a potentially infinite test space, those test 
+ sequences aiming at building confidence in key parts of the systems. Because more often than 
+ not, requirements can be mapped to a limited set of control states of the machine, it is 
+ possible to test requirements in isolation, and to **more exhaustively test those requirements 
+ which are key**. In our example, we expressed the test space (paths between initial state and 
+ final state), and decided to restrict testing to cover all transitions of the machine 
+ (navigation, input validation, etc.), but test more extensively the team selection process 
+ (traced to the `TEAMS`, `TEAM_DETAILS` control states). 
+ 
+ Our specific state-machine-based UI implementation, which separates event generation and action 
+ execution from the encoding of user interface behaviour, is so that one can build confidence about the 
+ user interface behaviour without resorting to many slow, sometimes flaky integrated tests 
+ revolving around the UI automation framework of the day. Integration tests are still necessary and cannot 
+ be dispensed with. However a few should be sufficient, as the behaviour itself of the UI has 
+ already been tested. Integration tests can focus on systems integration or [integration contract](https://martinfowler.com/bliki/ContractTest.html).

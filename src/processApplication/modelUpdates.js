@@ -177,6 +177,7 @@ export function updateModelWithSkippedTeamData(model, eventData) {
   // loop back to first team if met end of teams
   const nextTeamIndex = (latestTeamIndex + 1) % numberOfTeams;
 
+  // TODO : bug : if answer is not passing validation, keep the old answer
   return {
     updates: flatten([
       addOpToJsonPatch('/validationMessages', {}),

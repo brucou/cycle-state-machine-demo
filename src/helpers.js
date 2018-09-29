@@ -91,3 +91,28 @@ export function rxEmitterFactory(Rx) {
     }
   }
 }
+
+/**
+ *
+ * @param {Array} vector
+ * @param {Array.<Array>} array
+ * @returns {Array.<Array>}
+ */
+export function multiplyVectorByMatrixAndAppend(vector, array){
+  return array.map(element => vector.concat(element))
+}
+
+export function multiplyVectorByMatrixAndPrepend(vector, array){
+  return array.map(element => element.concat(vector))
+}
+
+/**
+ *
+ * @param {Array<Array>} matrixA
+ * @param {Array<Array>} matrixB
+ * @returns {Array.<Array>}
+ */
+export function concatMatrices(matrixA, matrixB){
+  return matrixA.map((elementA, index) => elementA.concat(matrixB[index]))
+}
+

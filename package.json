@@ -20,6 +20,7 @@
   "dependencies": {
     "@cycle/dom": "18.3.0",
     "@cycle/rxjs-run": "7.1.0",
+    "snabbdom-to-html": "^5.1.1",
     "rxjs": "5.4.3",
     "ramda": "^0.25.0",
     "json-patch-es6": "^2.0.6",

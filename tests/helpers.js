@@ -2,6 +2,7 @@ export function computeTimesCircledOn(edgePath, edge) {
   return edgePath.reduce((acc, edgeInEdgePath) => edgeInEdgePath === edge ? acc + 1 : acc, 0);
 }
 import { mapOverObj } from "fp-rosetree"
+import toHTML from "snabbdom-to-html";
 
 function isFunction(obj) {
   return typeof obj === 'function'
@@ -69,3 +70,33 @@ export function isUpdateOperation(obj) {
     )
 }
 
+export function toHTMLorNull(x) {
+  return x ? toHTML(x) : null;
+}
+
+export function convertVNodesToHTML(vNodeOrVnodes) {
+  if (Array.isArray(vNodeOrVnodes)) {
+    return vNodeOrVnodes.map(toHTMLorNull);
+  } else {
+    return toHTMLorNull(vNodeOrVnodes);
+  }
+}
+
+export function genNperm(n) {
+  if (n === 0) {
+    return []
+  }
+  else if (n === 1) {
+    return [[], [1] ]
+  }
+  else {
+    const seed = genNperm(n - 1);
+    const nPerm = seed.reduce((acc, perm) => {
+      return acc.concat([perm.concat([n])]).concat(perm.map((x, index, arr) => {
+        return arr.slice(0, index).concat([n]).concat(arr.slice(index))
+      }))
+    }, seed)
+
+    return nPerm
+  }
+}
