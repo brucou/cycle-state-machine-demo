@@ -29,15 +29,27 @@ Here are the initial specifications for the volunteer application workflow, as e
 
 ![wireframes](public/assets/images/graphs/application%20process.png)
 
-In addition, the following must hold :
-
-- it should be possible for the user to interrupt at any time its application and continue it 
-later from where it stopped
-- user-generated data must be validated
-- after entering all necessary data for his application, the user can review them and decide to 
-modify some of them, by returning to the appropriate screen (cf. pencil icons in the wireframe)
-
 # First iteration
+While analyzing the requirements and designing the corresponding state machine, more detailed 
+specifications emerge and are validated.
+
+## Detailed specifications
+1. A valid completed application contains the following fields : 
+  - personal information : super power, legal name, preferred name, phone, birthday, zip code
+    - all previously quoted fields are subject to validation
+    - any field failing validation must result in a detailed error message displayed
+    - min length > X : super power, legal name, preferred name
+    - mandatory fields : phone, birthday, zip code, opportunity question's answer, team 
+    motivational question's answer
+  - answer to a motivational question specific to the opportunity
+  - a non-empty set of teams that the volunteer want to join
+  - for any selected team, a non-empty answer to a motivational question specific to the team
+2. the user will be able to start filling in an application, interrupt the 
+application, and resume it at a later point in the stage where it stopped
+3. the user can review its application before applying, and modify it
+4. to avoid having to reenter information, previously entered information should be kept
+5. in case of contradiction of the previous rules with the user flow, the previous rules win
+
 ## Modelizing the user flow with an extended state machine
 On the first iteration, the provided wireframes are refined into a workable state machine, which 
 reproduces the provided user flow, while addressing key implementation details (error flows, data
