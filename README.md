@@ -44,11 +44,15 @@ specifications emerge and are validated.
   - answer to a motivational question specific to the opportunity
   - a non-empty set of teams that the volunteer want to join
   - for any selected team, a non-empty answer to a motivational question specific to the team
-2. the user will be able to start filling in an application, interrupt the 
+
+2. The user will be able to start filling in an application, interrupt the 
 application, and resume it at a later point in the stage where it stopped
-3. the user can review its application before applying, and modify it
-4. to avoid having to reenter information, previously entered information should be kept
-5. in case of contradiction of the previous rules with the user flow, the previous rules win
+
+3. The user can review its application before applying, and modify it
+
+4. To avoid having to reenter information, previously entered information should be kept
+
+5. In case of contradiction of the previous rules with the user flow, the previous rules win
 
 ## Modelizing the user flow with an extended state machine
 On the first iteration, the provided wireframes are refined into a workable state machine, which 
