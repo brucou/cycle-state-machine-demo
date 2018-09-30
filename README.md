@@ -50,9 +50,13 @@ application, and resume it at a later point in the stage where it stopped
 
 3. The user can review its application before applying, and modify it
 
-4. To avoid having to reenter information, previously entered information should be kept
+4. **NEW** : To avoid having to reenter information, previously entered information should be kept 
 
-5. In case of contradiction of the previous rules with the user flow, the previous rules win
+5. **NEW** : The user will be able to join a team, but also to unjoin it, if it was joined 
+previously. The same button will be used to that purpose, with the corresponding action displayed
+ (i.e. `Join` if the team is not joined yet, `Unjoin` if the team is already joined)
+
+6. In case of contradiction of the previous rules with the user flow, the previous rules win
 
 ## Modelizing the user flow with an extended state machine
 On the first iteration, the provided wireframes are refined into a workable state machine, which 
@@ -61,15 +65,28 @@ reproduces the provided user flow, while addressing key implementation details (
 
 ![extended state machine](public/assets/images/graphs/sparks%20application%20process%20with%20comeback%20proper%20syntax%20-%20flat%20fsm.png)
 
-The behaviour is pretty self-explanatory. The machines moves from its initial state to the fetch 
-state which awaits for a fetch event carrying the fetched data (previously saved application 
-data). From that, the sequence of screens flows in function of the user flow and rules 
-defined.
+To implement S2, we save the application state after each `Continue` button click, i.e. on the 
+first, second, third and fifth screen.
+To implement S4, when the user fills in a team's answer, we keep that, even if the team is not 
+joined (for instance skipped, or unjoined), so that when the user comes back to it, it can 
+retrieve that information.
+For UX reasons, we also chose to have the team selection come back to the first team when the user 
+consults the last team description and proceed to the next team (for instance clicking on `Skip`,
+ `Join`...).
 
-Note that we could have included processing of the fetch event inside our state machine. We could
- have instead fetched the relevant data, and then start the state machine with an initial 
- INIT event which carries the fetched data. Another option is also to start the state machine 
- with an initial extended state which includes the fetched data.
+I want to emphasize two points here :
+
+- the state machine graph itself does not suffice to completely represent the implementation. 
+Notably, information about event content, or output format is not visualized. However, it goes a 
+long way to communicate the application logic to a non-programming audience 
+- there are possible variations for the same logic : we could for instance have fetched the data 
+out of the state machine and start with an initial extended state which includes the fetched 
+data, or an INIT event which includes the fetched data.
+
+The behaviour of the state machine itself is pretty self-explanatory from the graph. The machines 
+moves from its initial state to the fetch state which awaits for a fetch event carrying the 
+fetched data (previously saved application data). From that, the sequence of screens flows in 
+function of the user flow and rules defined.
 
 ![demo](public/assets/images/animated_demo.gif)
 
@@ -109,8 +126,9 @@ are compared manually to expected outputs (derived from the informal requirement
 the model).
 
 [^1]: Those paths can be split into control paths and data paths (the latter relating to the set of 
-values the extended state can take, and addressed by [**data coverage** criteria](http://www.cse.chalmers.se/edu/year/2012/course/DIT848/files/06-Selecting-Tests.pdf)). We will 
-address only the control paths. 
+values the extended state can take, and addressed by [**data coverage** criteria](http://www.cse
+.chalmers.se/edu/year/2012/course/DIT848/files/06-Selecting-Tests.pdf)). For the sake of brevity,
+ we will address only the control paths. 
 
 Miscellaneous model coverage criteria[^2] are commonly used when designing a test suite with the 
 help of a model:
@@ -140,16 +158,16 @@ loops in the model
     USA, 1999.
 
 Using a dedicated [graph testing library](https://github.com/brucou/graph-adt), we computed the 
-abstract test suite for the *All one-loop path* criteria and ended up with around 1.500 tests!! 
-We reproduce below extract of the abstract test suite:
+abstract test suite for the *All one-loop path* criteria and ended up with more than 1.500 tests!! 
+We reproduce below excerpts of the abstract test suite:
  
  - A test is specified by a sequence of inputs 
  - Every line below is a the sequence of control states the machine go through based on the 
  sequence of inputs it receives. Note that you can have repetition of control states, anytime a 
  transition happens between a state and itself. Because we have used a *All one-loop path* 
  criteria to enumerate the paths to test, every `Team_Detail` loop corresponds to a different 
- edge in the model graph. Here such loop transitions could be `Skip Team` or `Join Team (valid 
- form)` or `Join Team (invalid form)`. We can see from the extract how the graph search works 
+ edge(transition) in the model graph. Here such loop transitions could be `Skip Team` or `Join Team 
+ (valid form)` or `Join Team (invalid form)`. We can see from the excerpts how the graph search works 
  (depth-first search).
 
 ```javascript
@@ -183,8 +201,9 @@ We reproduce below extract of the abstract test suite:
 As we mentioned, even for a relatively simple reactive system, we handed up with 1.000+ tests to 
 exhaust the paths between initial state and terminal state, and that even with excluding n-loops.
 
-We finally selected only 4 tests from the **All path coverage** set, for a total of around 50 
-transitions taken:
+We finally selected only 4 tests from the **All path coverage** set, for a total of around 50/26 
+transitions taken (some transitions are taken several twice, all transitions are taken at least 
+once):
 
 ```javascript
 ["nok","INIT_S","About","About","Question","Question","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","Question","Review","About","Review","State_Applied"],
@@ -194,22 +213,29 @@ transitions taken:
 
 ```
 
-Those tests :
-
-- fulfill the *All transitions coverage* criteria: 4 input sequences are sufficient
-- involves all the loops in the model graph (cf. first test sequence)
-- insist slightly more on the core functionality of the system, which is to apply to volunteer 
-teams (e.g. `TEAM_DETAIL` loop transitions)
+In addition to that, we decided to test more thoroughly the key functionality of our UI which is 
+the team selection(e.g. `TEAM_DETAIL` loop transitions) : 
   - the transition space for that control state is the 0,1,2,3 picks from `Join(Invalid Form) x 
-  Skip x Join(Valid Form)`. Some quick calculus gives us `3! x 8 / 3 = 16` admissible transition 
+  Skip x Join(Valid Form)`. Some quick calculus gives us `16` admissible transition 
   sequences for that control state. We exhaustively test all such permutations.
 - hence total `16 + 4 = 20` tests (we do not reuse the 4 sequences which cover the model, it is 
 actually simpler to write separated tests)
+ 
+ ```javascript
+ ["nok","INIT_S","Review","Teams",{...16 combinations...},"State_Applied"]
+ 
+ ```
 
-In summary the process is :
+Our test strategy hence can be recapitulated by :
+
+- *All transitions coverage* criteria: 4 input sequences are sufficient
+- insist on the core functionality of the system
+
+Furthermore, the process we have followed is :
 
 - we have informal UI requirements which are refined ino a state-machine-based 
-detailed specification 
+detailed specification
+- by doing so, detailed specifications emerge, togther with unforeseen cases
 - we generate input sequences and the corresponding output sequences, according to some 
 model coverage criteria, our target confidence level and our testing priorities (happy path, 
 error path, core scenario, etc.)
@@ -234,18 +260,23 @@ We have 1 test failing!! We found one bug! The bug happens when we have one subs
  button!! Note that our tests did not allow us to find the second bug, as we did not test a `Skip` 
  button click with an empty answer. 
  
- There are two learnings to be extracted from this. First, we have to test the model manually, as
-  we might inadvertently have made mistakes in expression the control flow of the application (here
-   we missed a guard). Second, even if we would the control flow paths exhaustively, we are still 
+ There are two learnings to be extracted from this:
+ 
+ - First, we do have to test the model manually, as we might inadvertently have made mistakes in 
+ expression the control flow of the application (here we missed a guard). 
+ - Second, even if we would test the control flow paths exhaustively, we are still 
    open to bugs coming from the dataflow paths that we have not tested: the tests we wrote test 
    only **ONE** given combination of data. We have no guarantee that they would pass for another
-    combination of application data (here empty answer on clicking `Skip` button).
+    combination of application data (here empty answer on clicking `Skip` button). As mentioned 
+    previously we will not address data coverage here for the sake of brevity (it suffices to say
+    that this concern can be addressed by property-based testing based on generating random input 
+    data). 
 
-**TODO** explain data coverage, and the hypothesis of data boundaries etc.
- 
-TODO : explain the back bug, the skip possible bug that we haven't tested (similar to the back 
-bug), coming from the UX requirement to keep trace of data entered by the user even if invalid or
- team is skipped/unjoined
+### Correction
+Further analysis leads us to the following updates in the detailed specifications :
+
+![extended state machine](public/assets/images/graphs/sparks%20application%20process%20with%20comeback%20proper%20syntax%20hierarchical%20fsm%20iter1.1.png)
+
 
 ## Integration tests
 Note that once the model is validated, we can use it as an oracle. This means for instance that we 
