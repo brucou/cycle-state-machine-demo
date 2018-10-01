@@ -272,11 +272,47 @@ We have 1 test failing!! We found one bug! The bug happens when we have one subs
     that this concern can be addressed by property-based testing based on generating random input 
     data). 
 
-### Correction
+### Bug fixing
 Further analysis leads us to the following updates in the detailed specifications :
 
 ![extended state machine](public/assets/images/graphs/sparks%20application%20process%20with%20comeback%20proper%20syntax%20hierarchical%20fsm%20iter1.1.png)
 
+Two important things to note again :
+
+- we have moved from 3 auto-transitions for control state `Team Detail` o 6. The previous 16 
+combinations become 300+ combinations. It does not really matter as we generate the 
+combinations automatically. However, because we want to keep the test fast, and the combination 
+growth is basically exponential, it is always a good idea not to have too many guards on a given 
+control state
+- the number of guards could be decreased by adding `Joined` and `Not joined` control states as 
+substates of `Team Detail` : we would then only have two guards corresponding to the error case 
+and main case. We do not do that however for the sake of simplicity (non-hierarchical graph)
+
+We of course have to update our testing strategy :
+
+- the previous *All transitions coverage* criteria can still be achieved with 4 test sequences. It 
+suffices to modify the first long sequence to include the extra 3 auto-transitions
+- the 300+ input sequences can be generated automatically. However this time we are going to 
+adopt a **different test tactic** :
+  - instead of running an input sequence through the machine and testing that for each input the 
+  corresponding output is generated, we will run the input sequence, but only test against the last 
+  output of the machine
+  - the rationale is that, from a user point of view, the volunteering application is the input 
+  sequence, and the expected outcome is the application being correctly registered in the relevant
+   external system (database, etc.), i.e. the final output of the machine. The sequence of screens 
+   leading to that could be seen as an implementation detail : the particular sequence of screens
+    could be changed (for instance joining or splitting screens) while the outcome would not. 
+    Such testing is less granular, and only part of the specification, but is also more resistant
+     to change in specifications.
+  - we allow ourselves this heuristic because we already checked the sequence of screens previously 
+  with the *All transitions coverage* criteria. We could make the white-box testing 
+  **assumption** that if any of the sequence of screens fails the specifications, the final one 
+  will also fail, most of the time. Naturally the assumption might turn out to be wrong, but as 
+  we said, we cannot test against an infinite test space, so we do not seek to **prove** our 
+  program. We rather seek to fail to **disprove** it, and we pick and choose the strategy we 
+  assume more economical for **finding errors**, once we have fulfilled our model coverage criteria.
+    
+With that in mind, one can refer to the update in the [test implementation](TODO).
 
 ## Integration tests
 Note that once the model is validated, we can use it as an oracle. This means for instance that we 
