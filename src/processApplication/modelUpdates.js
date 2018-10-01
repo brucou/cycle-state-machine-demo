@@ -188,13 +188,20 @@ export function updateModelWithSkippedTeamData(model, eventData) {
   }
 }
 
-export function updateModelWithJoinedOrUnjoinedTeamData(model, eventData) {
+export function updateModelWithJoinedTeamData(model, eventData) {
+  return updateModelWithJoinOrUnjoinedTeamData(model, eventData, true)
+}
+
+export function updateModelWithUnjoinedTeamData(model, eventData) {
+  return updateModelWithJoinOrUnjoinedTeamData(model, eventData, false)
+}
+
+export function updateModelWithJoinOrUnjoinedTeamData(model, eventData, joinFlag) {
   const { userApplication: { teams, progress: { latestTeamIndex } } } = model;
   const teamKeys = keys(teams);
   const numberOfTeams = teamKeys.length;
   const selectedTeamKey = getSelectedKey(latestTeamIndex, teamKeys);
   const { formData: { answer } } = eventData;
-  const { hasBeenJoined } = teams[selectedTeamKey];
   // loop back to first team if met end of teams
   const nextTeamIndex = (latestTeamIndex + 1) % numberOfTeams;
 
@@ -204,7 +211,7 @@ export function updateModelWithJoinedOrUnjoinedTeamData(model, eventData) {
       addOpToJsonPatch('/userApplication/progress/latestTeamIndex', nextTeamIndex),
       addOpToJsonPatch('/userApplication/progress/step', STEP_TEAM_DETAIL),
       addOpToJsonPatch(`/userApplication/teams/${selectedTeamKey}/answer`, answer),
-      addOpToJsonPatch(`/userApplication/teams/${selectedTeamKey}/hasBeenJoined`, !hasBeenJoined),
+      addOpToJsonPatch(`/userApplication/teams/${selectedTeamKey}/hasBeenJoined`, joinFlag),
     ])
   }
 }
@@ -241,7 +248,7 @@ function updateModelWithTeamDetailAnswerData(model, eventData) {
   const { userApplication: { progress: { latestTeamIndex }, teams } } = model;
   const teamKeys = keys(teams);
   const selectedTeamKey = getSelectedKey(latestTeamIndex, teamKeys);
-  const { answer } = eventData;
+  const { formData: { answer } } = eventData;
 
   return {
     updates: flatten([

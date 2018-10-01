@@ -1844,22 +1844,17 @@ QUnit.test("Teams subscription permutations", function exec_test(assert) {
   // TODO : rules
   // if join : answer not empty (join [valid && not joined])
   // if join : answer empty (join [invalid && not joined])
-  // if unjoin : keep answer (join [joined])
+  // if unjoin : keep answer (join [joined]) (it is ok to have an empty answer in that case!! pb with previous too then)
   // if skip && not joined : keep answer
   // if skip && joined : answer must be non-empty
   // if back && joined : answer must be non-empty
   // if back && not joined : keep answer
   // those rules ensure that no tema is joined and has an empty answer
   // TODO : redraw the fsm graph yed.
-  // add three transitions : skipValid, skipInvalid, backValid, backInvalid, joinUnjoin, joinJoinValid, joinJoinInvalid
-  // so we have now 7 transitions instead of 3!!!
-  // that changes all the README
-  // also in my tests I need to geenerate 5 permutations : [skipValid, skipInvalid, joinUnjoin, joinJoinValid,
-  // joinJoinInvalid]
-  // TODO : pb with unjoin, it is ok to have an empty answer in that case!! pb with previous too then
-  // TODO : also solve the skip bug so add skipInvalid, skipValid
-  // TODO:  pb is that I also ahve backValid, and backInvalid : No it is just back, sometimes invalid, someimes valid
-  // but in the state machine it is back valid, and invalid
+  // add four transitions : skipValid, skipInvalid, backInvalid, joinUnjoin, joinJoinValid, joinJoinInvalid (backValid)
+  // so we have now 6 transitions instead of 3!!!
+  // also in my tests I need to geenerate 6 permutations : [skipValid, skipInvalid, joinUnjoin, joinJoinValid,
+  // joinJoinInvalid, backInvalid] TODO!!
   // compute output sequences TODO : hasBeenJoined: []
   const generateTeamOutputSequence = (acc, input) => {
     let { latestTeamIndex, latestAnswer, hasBeenJoined, isValidSequence } = acc;

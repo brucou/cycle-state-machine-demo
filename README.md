@@ -302,22 +302,24 @@ adopt a **different test tactic** :
    external system (database, etc.), i.e. the final output of the machine. The sequence of screens 
    leading to that could be seen as an implementation detail : the particular sequence of screens
     could be changed (for instance joining or splitting screens) while the outcome would not. 
-    Such testing is less granular, and only part of the specification, but is also more resistant
-     to change in specifications.
+    Such testing is less granular, and only tests part of the specification, but is also more 
+    resistant to change in specifications.
   - we allow ourselves this heuristic because we already checked the sequence of screens previously 
   with the *All transitions coverage* criteria. We could make the white-box testing 
   **assumption** that if any of the sequence of screens fails the specifications, the final one 
   will also fail, most of the time. Naturally the assumption might turn out to be wrong, but as 
   we said, we cannot test against an infinite test space, so we do not seek to **prove** our 
   program. We rather seek to fail to **disprove** it, and we pick and choose the strategy we 
-  assume more economical for **finding errors**, once we have fulfilled our model coverage criteria.
-    
+  assume more economical for **finding errors** where it matters most, once we have fulfilled our 
+  model coverage criteria.
+
 With that in mind, one can refer to the update in the [test implementation](TODO).
 
 ## Integration tests
-Note that once the model is validated, we can use it as an oracle. This means for instance that we 
-can take any input sequence, run it through the model, gather the resulting outputs, generate the
- corresponding BDD test, and run them. Most of this process can be automatized.
+Note that once the model is validated, and we built enough trust in its correctness, we can use 
+it as an oracle. This means for instance that we can take any input sequence, run it through the 
+model, gather the resulting outputs, generate the corresponding BDD tests, and run them. Most of 
+this process can be automatized.
 
 ## Implementation
 We use the stream-oriented `cyclejs` framework to showcase our [state machine library](https://github.com/brucou/state-transducer). To that purpose, we use the `makeStreamingStateMachine` from our library to match a stream of actions to a stream of events. 
@@ -369,3 +371,25 @@ First of all, good UX/UI emerge from an iterative requirements refinement proces
  revolving around the UI automation framework of the day. Integration tests are still necessary and cannot 
  be dispensed with. However a few should be sufficient, as the behaviour itself of the UI has 
  already been tested. Integration tests can focus on systems integration or [integration contract](https://martinfowler.com/bliki/ContractTest.html).
+
+
+Conclusion 2
+Specifying UI is hard[put a link to my blog with hashtag]. It is essentially precisely and 
+economically defining the shape of an infinite solution space. This means in turn that testing UI
+ is hard, and requires heuristics to reach a minimum level of confidence in the UI implementaiton
+ . It turns from that implementing correct UI is hard. However the implementation problem can be 
+ simplifying by collapsing specification and implementation by using state machines. State 
+ machines as a matter of fact can be made execuable, and reduce the risk of both design bugs and 
+ implementation bugs. Additionally, it serves as communication and documentation tool between all 
+ stakeholders (designers, users, programmers, testers, etc.).
+
+The tool as its tradeoff though. It requires some learning curve as any abstraction. It requires 
+also some knowledge of algorithmics (combinatorial ability, graph search, etc.). Some of that can
+ be alleviated via tooling, but there will always be a price to pay to incorporate the formalism.
+  At the same time, the benefits are clear : higher confidence in correctness of the UI due to 
+  semi-automatized extensive testing, higher maintainability due to closeness between specs and 
+  implementation, documentation and communication power.
+  
+  My current recommendation is to experiment with it (to advance through for the learning curve) 
+  and use for the critical parts of the UI where correctness matters, and when a UI is relatively
+   stable, i.e. iterations brings minimal changes. 

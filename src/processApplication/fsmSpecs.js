@@ -12,15 +12,17 @@ import {
 } from './fsmActions';
 import {
   initializeModel, initializeModelAndStepReview, updateModelWithAboutStepValidationMessages,
-  updateModelWithJoinedOrUnjoinedTeamData, updateModelWithQuestionValidationMessages, updateModelWithSelectedTeamData,
-  updateModelWithSkippedTeamData, updateModelWithStepAndHasReviewed, updateModelWithStepOnly,
-  updateModelWithTeamDetailAnswerAndNextStep, updateModelWithTeamDetailValidationMessages
+  updateModelWithJoinedOrUnjoinedTeamData, updateModelWithJoinedTeamData, updateModelWithQuestionValidationMessages,
+  updateModelWithSelectedTeamData, updateModelWithSkippedTeamData, updateModelWithStepOnly,
+  updateModelWithTeamDetailAnswerAndNextStep, updateModelWithTeamDetailValidationMessages,
+  updateModelWithUnjoinedTeamData
 } from './modelUpdates';
 import {
   aboutContinueEventFactory, applicationCompletedEventFactory, backTeamClickedEventFactory, changeAboutEventFactory,
   changeQuestionEventFactory, changeTeamsEventFactory, hasApplied, hasJoinedAtLeastOneTeam, hasReachedReviewStep,
-  isFormValid, isStepAbout, isStepQuestion, isStepReview, isStepTeams, joinTeamClickedEventFactory,
-  questionContinueEventFactory, skipTeamClickedEventFactory, teamClickedEventFactory, teamContinueEventFactory
+  isFormValid, isStepAbout, isStepQuestion, isStepReview, isStepTeams, isTeamJoined, isTeamJoinedAndFormInvalid,
+  isTeamNotJoinedAndFormInvalid, isTeamNotJoinedAndFormValid, joinTeamClickedEventFactory, questionContinueEventFactory,
+  skipTeamClickedEventFactory, teamClickedEventFactory, teamContinueEventFactory
 } from './fsmEvents';
 import { fetchUserApplicationModelData } from './fetch';
 import { renderInitScreen } from "./renderInitScreen";
@@ -136,20 +138,44 @@ const transitionsWithoutRenderActions = [
     ]
   },
   { from: STATE_TEAMS, event: TEAM_CLICKED, to: STATE_TEAM_DETAIL, action: updateModelWithSelectedTeamData },
-  { from: STATE_TEAM_DETAIL, event: SKIP_TEAM_CLICKED, to: STATE_TEAM_DETAIL, action: updateModelWithSkippedTeamData },
+  {
+    from: STATE_TEAM_DETAIL, event: SKIP_TEAM_CLICKED, guards: [
+      {
+        predicate: complement(isTeamJoinedAndFormInvalid),
+        to: STATE_TEAM_DETAIL,
+        action: updateModelWithSkippedTeamData
+      },
+      { predicate: isTeamJoinedAndFormInvalid, to: STATE_TEAM_DETAIL, action: updateModelWithTeamDetailValidationMessages },
+    ]
+  },
   {
     from: STATE_TEAM_DETAIL,
     event: JOIN_OR_UNJOIN_TEAM_CLICKED,
     guards: [
-      { predicate: isFormValid, to: STATE_TEAM_DETAIL, action: updateModelWithJoinedOrUnjoinedTeamData },
-      { predicate: complement(isFormValid), to: STATE_TEAM_DETAIL, action: updateModelWithTeamDetailValidationMessages }
+      { predicate: isTeamJoined, to: STATE_TEAM_DETAIL, action: updateModelWithUnjoinedTeamData },
+      { predicate: isTeamNotJoinedAndFormValid, to: STATE_TEAM_DETAIL, action: updateModelWithJoinedTeamData },
+      {
+        predicate: isTeamNotJoinedAndFormInvalid,
+        to: STATE_TEAM_DETAIL,
+        action: updateModelWithTeamDetailValidationMessages
+      }
     ]
   },
   {
     from: STATE_TEAM_DETAIL,
     event: BACK_TEAM_CLICKED,
-    to: STATE_TEAMS,
-    action: updateModelWithTeamDetailAnswerAndNextStep
+    guards: [
+      {
+        predicate: isTeamJoinedAndFormInvalid,
+        to: STATE_TEAM_DETAIL,
+        action: updateModelWithTeamDetailValidationMessages
+      },
+      {
+        predicate: complement(isTeamJoinedAndFormInvalid),
+        to: STATE_TEAMS,
+        action: updateModelWithTeamDetailAnswerAndNextStep
+      },
+    ],
   },
   {
     from: STATE_TEAMS,

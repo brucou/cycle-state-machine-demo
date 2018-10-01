@@ -13,7 +13,7 @@ import {
   USER_APPLICATION_TEAM_CONTINUE_BUTTON_SELECTOR, USER_APPLICATION_TEAMLIST_SELECTOR
 } from './properties';
 import { isBoolean } from "@rxcc/contracts"
-import { preventDefault } from "../helpers"
+import { getSelectedKey, preventDefault } from "../helpers"
 
 ///////
 // Events
@@ -86,7 +86,15 @@ export function skipTeamClickedEventFactory(sources, settings) {
 
   return sources.DOM.select(USER_APPLICATION_SKIP_TEAM_SELECTOR).events('click')
     .do(preventDefault)
-    .map((x) => ({ formData: getTeamDetailFormData(sources.document) }))
+    .map((x) => {
+      void x;
+      const formData = getTeamDetailFormData(sources.document);
+
+      return {
+        formData,
+        validationData: validateScreenFields(teamDetailScreenFieldValidationSpecs, formData)
+      }
+    })
 }
 
 export function joinTeamClickedEventFactory(sources, settings) {
@@ -110,7 +118,15 @@ export function backTeamClickedEventFactory(sources, settings) {
 
   return sources.DOM.select(USER_APPLICATION_BACK_TO_TEAMS_SELECTOR).events('click')
     .do(preventDefault)
-    .map(ev => getTeamDetailFormData(sources.document))
+    .map((x) => {
+      void x;
+      const formData = getTeamDetailFormData(sources.document);
+
+      return {
+        formData,
+        validationData: validateScreenFields(teamDetailScreenFieldValidationSpecs, formData)
+      }
+    })
 }
 
 export function changeAboutEventFactory(sources, settings) {
@@ -188,15 +204,23 @@ export const isStepQuestion = isStep(STEP_QUESTION);
 export const isStepTeams = isStep(STEP_TEAMS);
 export const isStepReview = isStep(STEP_REVIEW);
 
-export function isFormValid(model, eventData) {
-  return pipe(values, all(isBoolean))(eventData.validationData)
-}
-
 export function hasReachedReviewStep(model, eventData) {
   void eventData;
   const { userApplication: { progress: { hasReviewedApplication } } } = model;
 
   return hasReviewedApplication
+}
+
+export function isFormValid(model, eventData) {
+  return pipe(values, all(isBoolean))(eventData.validationData)
+}
+
+export function isTeamJoined(model, eventData) {
+  const { userApplication: { progress: { latestTeamIndex }, teams } } = model;
+  const selectedTeam = teams[getSelectedKey(latestTeamIndex, keys(teams))];
+  const { hasBeenJoined } = selectedTeam;
+
+  return hasBeenJoined
 }
 
 export function hasJoinedAtLeastOneTeam(model, eventData) {
@@ -207,3 +231,16 @@ export function hasJoinedAtLeastOneTeam(model, eventData) {
 
   return _hasJoinedAtLeastOneTeam;
 }
+
+export function isTeamJoinedAndFormInvalid(model, eventData) {
+  return isTeamJoined(model, eventData) && !isFormValid(model, eventData)
+}
+
+export function isTeamNotJoinedAndFormValid(model, eventData) {
+  return !isTeamJoined(model, eventData) && isFormValid(model, eventData)
+}
+
+export function isTeamNotJoinedAndFormInvalid(model, eventData) {
+  return !isTeamJoined(model, eventData) && !isFormValid(model, eventData)
+}
+
