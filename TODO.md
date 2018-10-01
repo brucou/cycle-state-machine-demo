@@ -1,11 +1,8 @@
 # TODO
-- correct bug with back, i.e. add transition back && invalid, update back, to back && valid
-- will have to workr in another branch...
 - in the new branch have tests with prmutation generated and check only the last output when 
 output is expected and no output when no output expcted. i.e. partial oracle
 - explain in README the bugs
-- in README write down text version of requirements !! the graph is not enough. That will help 
-introduce the skip and back bugs
+  - count the permutations for 6 instead of 3 (16), should be 1000+ I bet
 - tell how hard it is to write UI bugs - this is an edge case which could have gone unnoticed (at
  the same time it is minor bugs?) That shows in any case why the model have to be tested. This is
   a model bug, not am implementation bug

@@ -18,11 +18,14 @@ showcase the definition and behaviour of an extended state machine.
 data-fetching. We will also implement pessimistic save for the most 'expensive' step in the 
 workflow. This will in turn serve to showcase an hierarchical extended state machine.
 
+The implementation uses `cyclejs` as framework, and [`state-transducer`](https://github.com/brucou/state-transducer#example-run) as a state machine library. To that purpose, we use the `makeStreamingStateMachine` from our library to match a stream of actions to a stream of events. We then wire that stream of actions with cyclejs sinks. We make use of two 
+ drivers : the DOM driver for updating the screen, and a domain driver for fetching data. 
+ 
+Code available in [dedicated branch](https://github.com/brucou/cycle-state-machine-demo/tree/first-iteration).
+
 With those two examples, we will be able to conclude by recapitulating the advantages and 
 trade-off associated to using state machines for specifying and implementing user interfaces. 
-
-The implementation uses `cyclejs` as framework, and [`state-transducer`](https://github.com/brucou/state-transducer#example-run) as a state machine library.
-
+ 
 # General specifications
 Here are the initial specifications for the volunteer application workflow, as extracted from the
  UX designers. Those initial specifications are light in details, and are simple lo-fi wireframes.
@@ -115,7 +118,8 @@ of any sequence of events admitted by the machine (assuming that events not acce
 machine have the same effect that if they did not exist in the first place : the machine ignores 
 them). That sequence is essentially infinite, so any testing of such reactive system necessarily 
 involves only a finite subset of the test space. How to pick that subset in a way to generate a minimum 
-**confidence** level is the crux of the matter and conditions the testing strategy to adopt.
+**confidence** level is the crux of the matter and strongly influences the testing strategy to 
+adopt.
 
 Because our model is both specification and implementation target, testing our model 
 involves **testing the different paths in the model**[^1]. Creating the abstract test suite  is 
@@ -272,14 +276,25 @@ We have 1 test failing!! We found one bug! The bug happens when we have one subs
     that this concern can be addressed by property-based testing based on generating random input 
     data). 
 
-### Bug fixing
+### Fixing the implementation
 Further analysis leads us to the following updates in the detailed specifications :
 
 ![extended state machine](public/assets/images/graphs/sparks%20application%20process%20with%20comeback%20proper%20syntax%20hierarchical%20fsm%20iter1.1.png)
 
+The impact on the previous implementation is **fairly localized and quick to identify**, because 
+control flow is segmented by control states, and concerns (state updates, actions, etc.) 
+are cleanly separated :
+
+- `fsmSpecs` : updating the `TEAM_DETAIL` control states' transitions
+- `fsmEvents` : updating the shape of the events `BACK`, `SKIP` and `JOIN` to include form 
+content ; writing the new guards for the new transitions
+- `modelUpdates` : modifying model updates function to account for the new shape of event data ; 
+writing new model update functions for the new transitions
+ 
+### Fixing the tests
 Two important things to note again :
 
-- we have moved from 3 auto-transitions for control state `Team Detail` o 6. The previous 16 
+- we have moved from 3 auto-transitions to 6 for control state `Team Detail`. The previous 16 
 combinations become 300+ combinations. It does not really matter as we generate the 
 combinations automatically. However, because we want to keep the test fast, and the combination 
 growth is basically exponential, it is always a good idea not to have too many guards on a given 
@@ -315,25 +330,18 @@ adopt a **different test tactic** :
 
 With that in mind, one can refer to the update in the [test implementation](TODO).
 
-## Integration tests
-Note that once the model is validated, and we built enough trust in its correctness, we can use 
-it as an oracle. This means for instance that we can take any input sequence, run it through the 
-model, gather the resulting outputs, generate the corresponding BDD tests, and run them. Most of 
-this process can be automatized.
-
-## Implementation
-We use the stream-oriented `cyclejs` framework to showcase our [state machine library](https://github.com/brucou/state-transducer). To that purpose, we use the `makeStreamingStateMachine` from our library to match a stream of actions to a stream of events. 
-We then wire that stream of actions with cyclejs sinks. In this iteration, we make use of two 
- drivers : the DOM driver for updating the screen, and a domain driver for fetching data. 
- 
-Code available in [dedicated branch](https://github.com/brucou/cycle-state-machine-demo/tree/first-iteration).
- 
  ## Run
 Check-out the branch on your local computer then type `npm run start` in the root directory for 
 that branch.
 
 # Second iteration
 **coming soon**
+
+# Integration tests
+Note that once the model is validated, and we built enough trust in its correctness, we can use 
+it as an oracle. This means for instance that we can take any input sequence, run it through the 
+model, gather the resulting outputs, generate the corresponding BDD tests, and run them. Most of 
+this process can be automated.
 
 # Conclusion
 User interfaces are notoriously difficult to implement. 
