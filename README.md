@@ -267,7 +267,7 @@ We have 1 test failing!! We found one bug! The bug happens when we have one subs
  There are two learnings to be extracted from this:
  
  - First, we do have to test the model manually, as we might inadvertently have made mistakes in 
- expression the control flow of the application (here we missed a guard). 
+ expressing the control flow of the application (here we missed a guard). 
  - Second, even if we would test the control flow paths exhaustively, we are still 
    open to bugs coming from the dataflow paths that we have not tested: the tests we wrote test 
    only **ONE** given combination of data. We have no guarantee that they would pass for another
@@ -295,7 +295,7 @@ writing new model update functions for the new transitions
 Two important things to note again :
 
 - we have moved from 3 auto-transitions to 6 for control state `Team Detail`. The previous 16 
-combinations become 300+ combinations. It does not really matter as we generate the 
+combinations become 1,900+ combinations. It does not really matter as we generate the 
 combinations automatically. However, because we want to keep the test fast, and the combination 
 growth is basically exponential, it is always a good idea not to have too many guards on a given 
 control state
@@ -303,12 +303,12 @@ control state
 substates of `Team Detail` : we would then only have two guards corresponding to the error case 
 and main case. We do not do that however for the sake of simplicity (non-hierarchical graph)
 
-We of course have to update our testing strategy :
+We of course have to update our testing strategy:
 
 - the previous *All transitions coverage* criteria can still be achieved with 4 test sequences. It 
-suffices to modify the first long sequence to include the extra 3 auto-transitions
-- the 300+ input sequences can be generated automatically. However this time we are going to 
-adopt a **different test tactic** :
+suffices to modify the first long sequence to include 4 extra auto-transitions
+- the 1,900+ input sequences can be generated automatically. However this time we are going to 
+adopt a **different test tactic**:
   - instead of running an input sequence through the machine and testing that for each input the 
   corresponding output is generated, we will run the input sequence, but only test against the last 
   output of the machine

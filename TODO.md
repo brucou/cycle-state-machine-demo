@@ -1,6 +1,6 @@
 # TODO
-- in the new branch have tests with prmutation generated and check only the last output when 
-output is expected and no output when no output expcted. i.e. partial oracle
+- in the new branch have tests with permutation generated and check only the last output when 
+output is expected and no output when no output expected. i.e. partial oracle
 - explain in README the bugs
   - count the permutations for 6 instead of 3 (16), should be 1000+ I bet
 - tell how hard it is to write UI bugs - this is an edge case which could have gone unnoticed (at

@@ -1,23 +1,26 @@
 import * as QUnit from "qunitjs"
 import * as Rx from "rx"
-import { assertContract, convertVNodesToHTML, formatResult, genNperm, isArrayUpdateOperations } from "./helpers"
+import { assertContract, convertVNodesToHTML, genNperm, isArrayUpdateOperations } from "./helpers"
 import { fsm } from "../src/processApplication/fsmSpecs"
 import {
-  ABOUT_CONTINUE, APPLICATION_COMPLETED, BACK_TEAM_CLICKED, CHANGE_ABOUT, CHANGE_QUESTION, CHANGE_TEAMS,
-  CONTRACT_MODEL_UPDATE_FN_RETURN_VALUE, FETCH_EV, INIT_S, JOIN_OR_UNJOIN_TEAM_CLICKED,
-  MANDATORY_PLEASE_FILL_IN_VALID_ERROR, MIN_LENGTH_VALID_ERROR, QUESTION_CONTINUE, SKIP_TEAM_CLICKED, STATE_ABOUT,
-  STATE_APPLIED, STATE_QUESTION, STATE_REVIEW, STATE_TEAM_DETAIL, STATE_TEAMS, STEP_REVIEW, TEAM_CLICKED, TEAM_CONTINUE
+  ABOUT_CONTINUE, APPLICATION_COMPLETED, BACK_TEAM_CLICKED, CHANGE_ABOUT, CHANGE_QUESTION,
+  CONTRACT_MODEL_UPDATE_FN_RETURN_VALUE, FETCH_EV, JOIN_OR_UNJOIN_TEAM_CLICKED, MANDATORY_PLEASE_FILL_IN_VALID_ERROR,
+  MIN_LENGTH_VALID_ERROR, QUESTION_CONTINUE, SKIP_TEAM_CLICKED, STATE_ABOUT, STATE_QUESTION, STATE_TEAMS, STEP_REVIEW,
+  TEAM_CLICKED, TEAM_CONTINUE
 } from "../src/processApplication/properties"
 import {
   ACTION_IDENTITY, computeTimesCircledOn, create_state_machine, decorateWithEntryActions, generateTestsFromFSM,
   identity, INIT_EVENT, INIT_STATE, makeHistoryStates, NO_OUTPUT
 } from "state-transducer"
-import { both, complement, mapObjIndexed, merge, T } from "ramda"
-import {
-  hasJoinedAtLeastOneTeam, hasReachedReviewStep, isFormValid, isStepReview
-} from "../src/processApplication/fsmEvents"
+import { mapObjIndexed } from "ramda"
 import { applyPatch } from "json-patch-es6/lib/duplex"
 import { multiplyVectorByMatrixAndAppend, multiplyVectorByMatrixAndPrepend } from "../src/helpers"
+import {
+  renderAboutErrorScreen, renderAboutInitScreen, renderAboutScreen, renderAppliedScreen, renderINITscreen,
+  renderInvalidTeamDetailJoinScreen, renderInvalidTeamDetailUnjoinScreen, renderQuestionErrorScreen,
+  renderQuestionScreen, renderReviewScreen, renderTeamDetailBackToUnjoinScreen, renderTeamDetailJoinScreen,
+  renderTeamScreen
+} from "./snapshots"
 
 const $ = Rx.Observable;
 
@@ -250,8 +253,35 @@ const appInTeamDetailValidForm = [
 const clickedOnSkipTeam = {
   formData: {
     'answer': 'skipped'
+  },
+  validationData: {
+    'answer': true
   }
 };
+const clickedOnSkipTeamInvalid = {
+  formData: {
+    'answer': ''
+  },
+  validationData: {
+    'answer': MANDATORY_PLEASE_FILL_IN_VALID_ERROR
+  }
+};
+const clickedOnBackInvalid = {
+  formData: {
+    'answer': ''
+  },
+  validationData: {
+    'answer': MANDATORY_PLEASE_FILL_IN_VALID_ERROR
+  }
+};
+const clickedOnBackValid = answer => ({
+  formData: {
+    'answer': answer
+  },
+  validationData: {
+    'answer': true
+  }
+});
 const appInTeamDetailBackValidForm = answer => ({
   'answer': answer
 });
@@ -337,18 +367,6 @@ const appSavedInReviewState = makeAppFixture(makeUserApplication({
   }
 ));
 
-const renderINITscreen = {
-  "DOM": "<div>Loading user application data...</div>"
-};
-const renderTeamScreen = ([isTeam0Joined, isTeam1Joined]) => ({
-  "DOM": `<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"active step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><h4 class=\"ui dividing header\">Select a team</h4><div class=\"c-application__teams-list ui list\"><div class=\"item\"><div class=\"right floated content\"><div class=\"ui button\">${isTeam0Joined ? 'O' : 'X'}</div></div><img class=\"ui avatar image\" src=\"./assets/images/teams/Parking.jpg\"><div class=\"content\" data-index=\"0\">Parking</div></div><div class=\"item\"><div class=\"right floated content\"><div class=\"ui button\">${isTeam1Joined ? 'O' : 'X'}</div></div><img class=\"ui avatar image\" src=\"./assets/images/teams/Box Office.jpg\"><div class=\"content\" data-index=\"1\">Box Office</div></div></div></div><div class=\"c-btn c-btn--primary c-application__submit--continue ${!isTeam0Joined && !isTeam1Joined ? 'disabled ' : ''}ui fluid primary button\" tabindex=\"0\">Continue</div><div class=\"c-application__error\"></div></div>`
-});
-const renderReviewScreen = (obj) => ({
-  "DOM": `<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Does this look good ?</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"step\"><div class=\"content\">Teams</div></a><a class=\"active step\"><div class=\"content\">Review</div></a></div><div class=\"ui one cards\"><div class=\"card\"><div class=\"content\"><i class=\"c-application__change--about right floated edit icon\"></i><div class=\"header\">About you</div><div class=\"ui list\"><div class=\"item\"><div class=\"ui button\"><i class=\"info icon\"></i></div>fly</div><div class=\"item\"><div class=\"ui button\"><i class=\"user outline icon\"></i></div>Kujio (Otadaki)</div><div class=\"item\"><div class=\"ui button\"><i class=\"text telephone icon\"></i></div>1234</div><div class=\"item\"><div class=\"ui button\"><i class=\"birthday icon\"></i></div>1984.09.09</div><div class=\"item\"><div class=\"ui button\"><i class=\"info icon\"></i></div>1231</div></div></div></div></div><div class=\"ui one cards\"><div class=\"card\"><div class=\"content\"><i class=\"c-application__change--question right floated edit icon\"></i><div class=\"header\">Organizer&#39;s question</div><div class=\"ui list message\"><div class=\"item\"><img class=\"ui avatar image\" src=\"./assets/images/avatar/small/matt.jpg\" className=\"ui avatar image\"><div class=\"content\"><div class=\"header\">would you catch it?</div>Organizer name and role</div></div></div><div class=\"description\"><img class=\"ui floated right avatar image\" src=\"./assets/images/avatar/large/elliot.jpg\" className=\"ui floated right avatar image\"><p>That is what I like</p></div></div></div></div><div class=\"ui one cards\"><div class=\"card\"><div class=\"content\"><i class=\"c-application__change--teams right floated edit icon\"></i><div class=\"header\">Team selection</div><div class=\"ui list\"><div class=\"item\"><div class=\"ui button\"><i class=\"info icon\"></i></div>Parking</div>${obj && obj.hasBeenJoined[1] ? '<div class="item"><div class="ui button"><i class="info icon"></i></div>Box Office</div>' : ''}</div></div></div></div><div class=\"ui basic segment\"><button class=\"c-application__review--submit ui fluid primary button\">Apply for the things</button></div><div class=\"c-application__error\"></div></div>`
-});
-const renderAppliedScreen = {
-  "DOM": "<div class=\"ui raised segment\"><p>You successfully applied! Stay in touch</p></div>",
-};
 const updateAction = ({ step, superPower, hasApplied, hasReviewedApplication, hasBeenJoined, answers, question, latestTeamIndex }) => ({
   "domainAction": {
     "command": "Update",
@@ -366,7 +384,6 @@ const updateAction = ({ step, superPower, hasApplied, hasReviewedApplication, ha
           "zipCode": "1231"
         }
       },
-      "opportunityKey": "opportunity",
       "progress": {
         hasApplied,
         hasReviewedApplication,
@@ -374,408 +391,31 @@ const updateAction = ({ step, superPower, hasApplied, hasReviewedApplication, ha
         "step": step ? step : "Review"
       },
       "questions": {
-        "answer": question || "That is what I like"
+        "answer": question
       },
       "teams": {
         "-KFVqOyjPpR4pdgK-0Wr": {
-          "answer": answers[0],
+          "answer": (answers || [])[0] || ``,
           "description": "Be one of the first faces people see and direct them their parking spot. Enjoy the many perks of this highly social position. ",
           "hasBeenJoined": hasBeenJoined[0],
           "name": "Parking",
           "question": "Have you worked parking for any other festivals? Which ones?"
         },
         "KFVssLvEPsDJUofy1Yd": {
-          "answer": answers[1],
+          "answer": (answers || [])[1] || ``,
           "description": "The gateway to Cosmic Alignment! Here, you'll be selling GA tickets, banding guests and checking in artists. This job requires organization and a friendly face.",
           "hasBeenJoined": hasBeenJoined[1],
           "name": "Box Office",
           "question": "Which festivals have you worked Box Office before?"
         }
       },
-      "userKey": "user"
     }
   }
 });
-const renderQuestionScreen = answer => ({
-  "DOM": `<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"active step\"><div class=\"content\">Question</div></a><a class=\"step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><form class=\"ui form\"><h4 class=\"ui dividing header\">Organizer&#39;s question</h4><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">would you catch it?</div><p>Organizer&#39;s name/role</p></div></div><div class=\"field\"><textarea class=\"c-textfield__input--answer\" name=\"userapp[organizer-question]\" placeholder=\"Please enter your answer here\" value=${answer ? answer : '"That is what I like"'} required=\"false\"></textarea><div class=\"c-textfield__error c-textfield__error--answer\"></div></div></form></div><div class=\"c-btn c-btn--primary c-application__submit--question ui fluid primary button\" tabindex=\"0\">Continue</div><div class=\"c-application__error\"></div></div>`
-});
+
 const INIT_I = { [INIT_EVENT]: {} };
 
-// NOTE : we are removing this test but keeping the code for later
-// Reason is that the test takes a few minutes to run, as it generates over 1.000 paths through the machine graph
-// Additionally it is failing in places, as state updates seems to be destructive? TODO : review JSON patch updates
-// That is not a bug of the state transducer as the transducer delegates state update.
-QUnit.skip("all paths with no cycles", function exec_test(assert) {
-  const states = {
-    [INIT_S]: '',
-    [STATE_ABOUT]: '',
-    [STATE_QUESTION]: '',
-    [STATE_TEAMS]: '',
-    [STATE_TEAM_DETAIL]: '',
-    [STATE_REVIEW]: '',
-    [STATE_APPLIED]: '['
-  };
-  // When it is the first time accessing the volunteering page, there is no data for the user application yet
-  const appInReviewedStateInQuestionState = makeAppFixture(makeUserApplication({
-      superPower: 'fly',
-      phone: '1234',
-      preferredName: 'Otadaki',
-      zipCode: '1231',
-      legalName: 'Kujio',
-      birthday: '09.09.09',
-      answer: 'That is what I like',
-      teamsInfo,
-      step: STATE_QUESTION,
-      hasApplied: false,
-      hasReviewedApplication: true,
-      latestTeamIndex: 0
-    }
-  ));
-  const appInAppliedStateInQuestionState = makeAppFixture(makeUserApplication({
-      superPower: 'fly',
-      phone: '1234',
-      preferredName: 'Otadaki',
-      zipCode: '1231',
-      legalName: 'Kujio',
-      birthday: '09.09.09',
-      answer: 'That is what I like',
-      teamsInfo,
-      step: STATE_QUESTION,
-      hasApplied: true,
-      hasReviewedApplication: true,
-      latestTeamIndex: 0
-    }
-  ));
-
-  const fsmDef = fsm;
-  const maxNumberOfTraversals = 1;
-  const settings = merge(default_settings, noEdgeRepeats(STATE_APPLIED, maxNumberOfTraversals));
-  const genFsmDef = {
-    // this is from state machine without render : [
-    //     { from: INIT_STATE, event: INIT_EVENT, guards: [{ predicate: T, to: INIT_S, action: identity }] },
-    //     {
-    //       from: INIT_S, event: FETCH_EV, guards: [
-    //         { predicate: hasApplied, to: STATE_REVIEW, action: initializeModelAndStepReview },
-    //         { predicate: isStepAbout, to: STATE_ABOUT, action: initializeModel },
-    //         { predicate: isStepQuestion, to: STATE_QUESTION, action: initializeModel },
-    //         { predicate: isStepTeams, to: STATE_TEAMS, action: initializeModel },
-    //         { predicate: isStepReview, to: STATE_REVIEW, action: initializeModel },
-    //       ]
-    //     },
-    //     {
-    //       from: STATE_ABOUT, event: ABOUT_CONTINUE, guards: [
-    //         {
-    //           predicate: both(isFormValid, complement(hasReachedReviewStep)),
-    //           to: STATE_QUESTION,
-    //           action: updateUserAppAndRenderQuestionStep
-    //         },
-    //         {
-    //           predicate: both(isFormValid, hasReachedReviewStep),
-    //           to: STATE_REVIEW,
-    //           action: updateUserAppAndRenderReviewStep
-    //         },
-    //         {
-    //           predicate: T,
-    //           to: STATE_ABOUT,
-    //           action: updateModelWithAboutStepValidationMessages
-    //         }
-    //       ]
-    //     },
-    //     {
-    //       from: STATE_QUESTION, event: QUESTION_CONTINUE, guards: [
-    //         {
-    //           predicate: both(isFormValid, complement(hasReachedReviewStep)),
-    //           to: STATE_TEAMS,
-    //           action: updateUserAppAndRenderTeamsStepT
-    //         },
-    //         {
-    //           predicate: both(isFormValid, hasReachedReviewStep),
-    //           to: STATE_REVIEW,
-    //           action: updateUserAppAndRenderReviewStepR
-    //         },
-    //         {
-    //           predicate: T,
-    //           to: STATE_QUESTION,
-    //           action: updateModelWithQuestionValidationMessages
-    //         }
-    //       ]
-    //     },
-    //     {
-    //       from: STATE_TEAMS,
-    //       event: TEAM_CLICKED,
-    //       guards: [{ predicate: T, to: STATE_TEAM_DETAIL, action: updateModelWithSelectedTeamData }]
-    //     },
-    //     {
-    //       from: STATE_TEAM_DETAIL,
-    //       event: SKIP_TEAM_CLICKED,
-    //       guards: [{ predicate: T, to: STATE_TEAM_DETAIL, action: updateModelWithSkippedTeamData }]
-    //     },
-    //     {
-    //       from: STATE_TEAM_DETAIL,
-    //       event: JOIN_OR_UNJOIN_TEAM_CLICKED,
-    //       guards: [
-    //         { predicate: isFormValid, to: STATE_TEAM_DETAIL, action: updateModelWithJoinedOrUnjoinedTeamData },
-    //         { predicate: T, to: STATE_TEAM_DETAIL, action: updateModelWithTeamDetailValidationMessages }
-    //       ]
-    //     },
-    //     {
-    //       from: STATE_TEAM_DETAIL,
-    //       event: BACK_TEAM_CLICKED,
-    //       guards: [{ predicate: T, to: STATE_TEAMS, action: updateModelWithTeamDetailAnswerAndNextStep }]
-    //     },
-    //     {
-    //       from: STATE_TEAMS,
-    //       event: TEAM_CONTINUE,
-    //       guards: [
-    //         {
-    //           predicate: hasJoinedAtLeastOneTeam,
-    //           to: STATE_REVIEW,
-    //           action: updateUserAppWithHasReviewed
-    //         },
-    //         { predicate: T, to: STATE_TEAM_DETAIL, action: updateModelWithStepAndHasReviewed }
-    //       ]
-    //     },
-    //     {
-    //       from: STATE_REVIEW,
-    //       event: CHANGE_ABOUT,
-    //       guards: [
-    //         { predicate: T, to: STATE_ABOUT, action: updateModelWithStepOnly(STEP_ABOUT) },
-    //       ]
-    //     },
-    //     {
-    //       from: STATE_REVIEW,
-    //       event: CHANGE_QUESTION,
-    //       guards: [
-    //         { predicate: T, to: STATE_QUESTION, action: updateModelWithStepOnly(STEP_QUESTION) },
-    //       ]
-    //     },
-    //     {
-    //       from: STATE_REVIEW,
-    //       event: CHANGE_TEAMS,
-    //       guards: [
-    //         { predicate: T, to: STATE_TEAMS, action: updateModelWithStepOnly(STEP_TEAMS) },
-    //       ]
-    //     },
-    //     {
-    //       from: STATE_REVIEW,
-    //       event: APPLICATION_COMPLETED,
-    //       guards: [
-    //         {
-    //           predicate: T,
-    //           to: STATE_APPLIED,
-    //           action: updateUserAppWithHasApplied
-    //         },
-    //       ]
-    //     },
-    //   ]
-    transitions: [
-      {
-        from: INIT_STATE, event: INIT_EVENT, to: INIT_S, gen: function genINITtoINIT_S(extS) {
-          return { input: extS, hasGeneratedInput: true }
-        }
-      },
-      {
-        from: INIT_S, event: FETCH_EV, guards: [
-          // {
-          //   predicate: hasApplied, to: STATE_REVIEW, gen: function genINIT_StoReviewApplied(extS) {
-          //     return { input: appInAppliedStateInQuestionState, hasGeneratedInput: true }
-          //   }
-          // },
-          // {
-          //   predicate: isStepAbout, to: STATE_ABOUT, gen: function genINIT_StoABOUT(extS) {
-          //     return { input: appSavedInAboutState, hasGeneratedInput: true }
-          //   }
-          // },
-          // {
-          //   predicate: isStepQuestion, to: STATE_QUESTION, gen: function genINIT_StoQUESTION(extS) {
-          //     return { input: appSavedInQuestionState, hasGeneratedInput: true }
-          //   }
-          // },
-          // {
-          //   predicate: isStepTeams, to: STATE_TEAMS, gen: function genINIT_StoTEAMS(extS) {
-          //     return { input: appSavedInTeamsStateWithTeam1Joined, hasGeneratedInput: true }
-          //   }
-          // },
-          {
-            predicate: isStepReview, to: STATE_REVIEW, gen: function genINIT_StoREVIEW(extS) {
-              return { input: appInReviewedStateInQuestionState, hasGeneratedInput: true }
-            }
-          },
-        ]
-      },
-      {
-        from: STATE_ABOUT, event: ABOUT_CONTINUE, guards: [
-          {
-            predicate: both(isFormValid, complement(hasReachedReviewStep)),
-            to: STATE_QUESTION,
-            gen: function genABOUTtoQUESTION(extS) {
-              return { input: appInABOUTandValidFormAndNotReviewed, hasGeneratedInput: !hasReachedReviewStep(extS) }
-            }
-          },
-          {
-            predicate: both(isFormValid, hasReachedReviewStep),
-            to: STATE_REVIEW,
-            gen: function genABOUTtoREVIEW(extS) {
-              return { input: appInABOUTandValidFormAndReviewed, hasGeneratedInput: hasReachedReviewStep(extS) }
-            }
-          },
-          {
-            predicate: complement(isFormValid),
-            to: STATE_ABOUT,
-            gen: function genABOUTtoABOUT(extS) {
-              return { input: appInABOUTandInvalidForm, hasGeneratedInput: true }
-            }
-          }
-        ]
-      },
-      {
-        from: STATE_QUESTION, event: QUESTION_CONTINUE, guards: [
-          {
-            predicate: both(isFormValid, complement(hasReachedReviewStep)),
-            // Here `isFormValid` depends on the triggered event while `hasReachedReviewStep` is a function of the
-            // extended state. To progress the state machine, the generator must hence check the validity of the
-            // conditions on the extended state, while generating event data which is compatible with the transition
-            // going forward
-            to: STATE_TEAMS,
-            gen: function genQUESTIONtoTEAMS(extS) {
-              return { input: appInQUESTIONandValidFormAndNotReviewed, hasGeneratedInput: !hasReachedReviewStep(extS) }
-            }
-          },
-          {
-            predicate: both(isFormValid, hasReachedReviewStep),
-            to: STATE_REVIEW,
-            gen: function genQUESTIONtoREVIEW(extS) {
-              return { input: appInQUESTIONandValidFormAndReviewed, hasGeneratedInput: hasReachedReviewStep(extS) }
-            }
-          },
-          {
-            predicate: complement(isFormValid),
-            to: STATE_QUESTION,
-            gen: function genQUESTIONtoQUESTION(extS) {
-              return { input: appInQUESTIONandInvalidForm, hasGeneratedInput: true }
-            }
-          }
-        ]
-      },
-      {
-        from: STATE_TEAMS, event: TEAM_CLICKED, to: STATE_TEAM_DETAIL,
-        gen: function genTEAMStoQUESTION(extS) {
-          return { input: clickedOnTeam, hasGeneratedInput: true }
-        }
-      },
-      {
-        from: STATE_TEAM_DETAIL, event: SKIP_TEAM_CLICKED, to: STATE_TEAM_DETAIL,
-        gen: function genTEAMDETAILtoTEAMDETAILskip(extS) {
-          return { input: clickedOnSkipTeam, hasGeneratedInput: true }
-        }
-      },
-      {
-        from: STATE_TEAM_DETAIL,
-        event: JOIN_OR_UNJOIN_TEAM_CLICKED,
-        guards: [
-          {
-            predicate: isFormValid, to: STATE_TEAM_DETAIL, gen: function genTEAMDETAILtoTEAMDETAIL_un_join(extS) {
-              const { userApplication: { teams, progress: { latestTeamIndex } } } = extS;
-              return { input: appInTeamDetailValidForm[latestTeamIndex], hasGeneratedInput: true }
-            }
-          },
-          {
-            predicate: T, to: STATE_TEAM_DETAIL, gen: function genTEAMDETAILtoTEAMDETAIL_un_join_invalid(extS) {
-              return { input: appInTeamDetailInvalidForm, hasGeneratedInput: true }
-            }
-          }
-        ]
-      },
-      {
-        from: STATE_TEAM_DETAIL,
-        event: BACK_TEAM_CLICKED, to: STATE_TEAMS,
-        gen: function genTEAMDETAILtoTEAMS(extS) {
-          const { userApplication: { teams, progress: { latestTeamIndex } } } = extS;
-          const teamKeys = Object.keys(teams);
-          const selectedTeamKey = teamKeys[latestTeamIndex];
-          const { answer } = teams[selectedTeamKey];
-          return { input: appInTeamDetailBackValidForm(answer), hasGeneratedInput: true }
-        }
-      },
-      {
-        from: STATE_TEAMS,
-        event: TEAM_CONTINUE,
-        guards: [
-          {
-            predicate: hasJoinedAtLeastOneTeam, to: STATE_REVIEW,
-            gen: function genTEAMStoREVIEW_atLeastOne(extS) {
-              return {
-                input: null,
-                hasGeneratedInput: hasJoinedAtLeastOneTeam(extS)
-              }
-            }
-          },
-          {
-            predicate: complement(hasJoinedAtLeastOneTeam), to: STATE_TEAM_DETAIL,
-            gen: function genTEAMStoREVIEW_none(extS) {
-              return {
-                input: null,
-                hasGeneratedInput: !hasJoinedAtLeastOneTeam(extS)
-              }
-            }
-          }
-        ]
-      },
-      {
-        from: STATE_REVIEW, event: CHANGE_ABOUT, to: STATE_ABOUT,
-        gen: function genREVIEWtoABOUT(extS) {
-          return {
-            input: null,
-            hasGeneratedInput: true
-          }
-        }
-      },
-      {
-        from: STATE_REVIEW, event: CHANGE_QUESTION, to: STATE_QUESTION,
-        gen: function genREVIEWtoQUESTION(extS) {
-          return {
-            input: null,
-            hasGeneratedInput: true
-          }
-        }
-      },
-      {
-        from: STATE_REVIEW, event: CHANGE_TEAMS, to: STATE_TEAMS,
-        gen: function genREVIEWtoTEAMS(extS) {
-          return {
-            input: null,
-            hasGeneratedInput: true
-          }
-        }
-      },
-      {
-        from: STATE_REVIEW, event: APPLICATION_COMPLETED, to: STATE_APPLIED,
-        gen: function genREVIEWtoAPPLIED(extS) {
-          return {
-            input: null,
-            hasGeneratedInput: true
-          }
-        }
-      },
-    ],
-  };
-  const generators = genFsmDef.transitions;
-  debugger
-  const results = generateTestsFromFSM(fsmDef, generators, settings);
-  const formattedResults = results.map(formatResult);
-
-  assert.deepEqual(formattedResults.map(x => x.controlStateSequence), [], `...`);
-  assert.deepEqual(formattedResults.map(x => x.inputSequence), [], `...`);
-  assert.deepEqual(formattedResults.map(x => x.outputSequence), [], `...`);
-});
-
-QUnit.test(`INIT -> About -invalid-> About -> Question -invalid-> Question -> Teams -click-0-> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -back-> Teams -> Review -> Question -> Review -> About -> Review -> State_Applied`, function exec_test(assert) {
-  // ["nok","INIT_S","About","About","Question","Question","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","About","Review","Question","Review","State_Applied"],
-  // NOTE : in passing, we wrote our input sequence to test that skip actually keep the answer for a team even when
-  // that team is not joined. We haven't done that for the `back` button though... TODO : add some property based
-  // testing there ? - forall new answer, if click on 1/join/skip AND update to new answer/back/click on 2 => should
-  // see new answer - looping, etc. but not so interesting overall, just allow to test data domain by varying the
-  // forall
+QUnit.test(`INIT -> About -invalid-> About -> Question -invalid-> Question -> Teams -click-0-> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -back-> Teams -> Review -> Question -> Review -> About -> Review -> State_Applied`, function exec_test(assert) {
   const inputSequence = [
     INIT_I,
     { [FETCH_EV]: appUnsavedWithNoData },
@@ -783,12 +423,17 @@ QUnit.test(`INIT -> About -invalid-> About -> Question -invalid-> Question -> Te
     { [ABOUT_CONTINUE]: appInABOUTandValidFormAndNotReviewed },
     { [QUESTION_CONTINUE]: appInQUESTIONandInvalidForm },
     { [QUESTION_CONTINUE]: appInQUESTIONandValidFormAndNotReviewed },
+    // NOTE : this should not happen via GUI as the button should be disabled! We still test it however
     { [TEAM_CONTINUE]: {} },
     { [TEAM_CLICKED]: clickedOnTeam },
-    { [JOIN_OR_UNJOIN_TEAM_CLICKED]: appInTeamDetailInvalidForm }, // invalid
-    { [JOIN_OR_UNJOIN_TEAM_CLICKED]: appInTeamDetailValidForm[0] }, // then valid
-    { [SKIP_TEAM_CLICKED]: clickedOnSkipTeam }, // then skip
-    { [BACK_TEAM_CLICKED]: appInTeamDetailBackValidForm(appInTeamDetailValidForm[0].formData.answer) }, // then back
+    { [JOIN_OR_UNJOIN_TEAM_CLICKED]: appInTeamDetailInvalidForm }, // try to join with empty answer
+    { [JOIN_OR_UNJOIN_TEAM_CLICKED]: appInTeamDetailValidForm[0] }, // then join the team 0
+    { [SKIP_TEAM_CLICKED]: clickedOnSkipTeamInvalid }, // then skip with empty answer : should pass
+    { [SKIP_TEAM_CLICKED]: clickedOnSkipTeamInvalid }, // then skip with empty answer : should block
+    { [BACK_TEAM_CLICKED]: clickedOnBackInvalid }, // then back with empty answer : should block
+    { [JOIN_OR_UNJOIN_TEAM_CLICKED]: appInTeamDetailInvalidForm }, // then unjoin the joined team with empty answer
+    { [JOIN_OR_UNJOIN_TEAM_CLICKED]: appInTeamDetailValidForm[1] }, // then join the team 1
+    { [BACK_TEAM_CLICKED]: clickedOnBackInvalid }, // then back with empty answer : should pass
     { [TEAM_CONTINUE]: {} },
     { [CHANGE_ABOUT]: {} },
     { [ABOUT_CONTINUE]: appInABOUTandValidFormAndReviewed },
@@ -802,361 +447,234 @@ QUnit.test(`INIT -> About -invalid-> About -> Question -invalid-> Question -> Te
     if (sinkName === 'DOM') return convertVNodesToHTML(value)
     else return value
   })));
-
-  assert.deepEqual(HTMLedResults, [
+  const expectedOutputSequences = [
+    [renderINITscreen],
+    [renderAboutInitScreen],
+    [renderAboutErrorScreen],
     [
       {
-        "DOM": "<div>Loading user application data...</div>"
+        "DOM": renderQuestionScreen({}).DOM,
+        "domainAction": updateAction({
+          "step": "Question",
+          "question": "",
+          "hasBeenJoined": [false, false],
+          "hasApplied": false,
+          "hasReviewedApplication": false
+        }).domainAction
+      }
+    ],
+    [renderQuestionErrorScreen({})],
+    [
+      {
+        "DOM": renderTeamScreen([false, false]).DOM,
+        "domainAction": updateAction({
+          "step": "Teams",
+          "question": "That is what I like",
+          "hasBeenJoined": [false, false],
+          "hasApplied": false,
+          "hasReviewedApplication": false
+        }).domainAction,
+      }
+    ],
+    [renderTeamScreen([false, false])],
+    [renderTeamDetailJoinScreen('')[0]],
+    [renderInvalidTeamDetailJoinScreen('')[0]],
+    [renderTeamDetailJoinScreen('')[1]],
+    [renderTeamDetailBackToUnjoinScreen(`Team 0 answer`)[0]],
+    [renderInvalidTeamDetailUnjoinScreen('')[0]],
+    [renderInvalidTeamDetailUnjoinScreen('')[0]],
+    [renderTeamDetailJoinScreen('')[1]],
+    [renderTeamDetailJoinScreen('')[0]],
+    [renderTeamScreen([false, true])],
+    [
+      {
+        "DOM": renderReviewScreen({ hasBeenJoined: [false, true] }).DOM,
+        "domainAction": updateAction({
+          "step": "Review",
+          "question": "That is what I like",
+          "hasBeenJoined": [false, true],
+          answers: [``, `Team 1 answer`],
+          "hasApplied": false,
+          "hasReviewedApplication": true
+        }).domainAction,
+      }
+    ],
+    [renderAboutScreen({
+      superPower: appInABOUTandValidFormAndNotReviewed.formData.superPower,
+      phone: appInABOUTandValidFormAndNotReviewed.formData.phone,
+      preferredName: appInABOUTandValidFormAndNotReviewed.formData.preferredName,
+      zipCode: appInABOUTandValidFormAndNotReviewed.formData.zipCode,
+      legalName: appInABOUTandValidFormAndNotReviewed.formData.legalName,
+      birthday: appInABOUTandValidFormAndNotReviewed.formData.birthday
+    })],
+    [
+      {
+        "DOM": renderReviewScreen({ hasBeenJoined: [false, true], superPower : 'refly' }).DOM,
+        "domainAction": updateAction({
+          superPower : 'refly',
+          "step": "Review",
+          "question": "That is what I like",
+          "hasBeenJoined": [false, true],
+          answers: [``, `Team 1 answer`],
+          "hasApplied": false,
+          "hasReviewedApplication": true
+        }).domainAction,
+      }
+    ],
+    [renderQuestionScreen({ answer: appInQUESTIONandValidFormAndNotReviewed.formData.answer })],
+    [
+      {
+        "DOM": renderReviewScreen({ hasBeenJoined: [false, true] , superPower : 'refly', question : "That is what I like so much" }).DOM,
+        "domainAction": updateAction({
+          "step": "Review",
+          superPower : 'refly',
+          "question": "That is what I like so much",
+          "hasBeenJoined": [false, true],
+          answers: [``, `Team 1 answer`],
+          "hasApplied": false,
+          "hasReviewedApplication": true
+        }).domainAction,
       }
     ],
     [
       {
-        "DOM": '<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"active step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><form class=\"ui form\"><h4 class=\"ui dividing header\">About you</h4><div class=\"field\"><input class=\"c-textfield__input--super-power\" type=\"text\" name=\"userapp[superpower]\" placeholder=\"What is your superpower?\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--super-power\"></div></div><h4 class=\"ui dividing header\">Personal details</h4><div class=\"field\"><input class=\"c-textfield__input--legal-name\" type=\"text\" name=\"userapp[legal-name]\" placeholder=\"Legal name\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--legal-name\"></div></div><div class=\"field\"><input class=\"c-textfield__input--preferred-name\" type=\"text\" name=\"userapp[preferred-name]\" placeholder=\"Preferred name\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--preferred-name\"></div></div><div class=\"field\"><input class=\"c-textfield__input--phone\" type=\"text\" name=\"userapp[phone]\" placeholder=\"Phone\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--phone\"></div></div><div class=\"two fields\"><div class=\"field\"><input class=\"c-textfield__input--birthday\" type=\"text\" name=\"userapp[birthday]\" placeholder=\"Birthday\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--birthday\"></div></div><div class=\"field\"><input class=\"c-textfield__input--zip-code\" type=\"text\" name=\"userapp[zip-code]\" placeholder=\"Zip code\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--zip-code\"></div></div></div></form></div><div class=\"c-btn c-btn--primary c-application__submit-about ui fluid primary button\" tabindex=\"0\">Continue</div><div class=\"c-application__error\"></div></div>'
-      }
-    ],
-    [
-      {
-        "DOM": `<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"active step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><form class=\"ui form\"><h4 class=\"ui dividing header\">About you</h4><div class=\"field\"><input class=\"c-textfield__input--super-power\" type=\"text\" name=\"userapp[superpower]\" placeholder=\"What is your superpower?\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--super-power\">Mandatory field : please fill in !</div></div><h4 class=\"ui dividing header\">Personal details</h4><div class=\"field\"><input class=\"c-textfield__input--legal-name\" type=\"text\" name=\"userapp[legal-name]\" placeholder=\"Legal name\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--legal-name\">Mandatory field : please fill in !</div></div><div class=\"field\"><input class=\"c-textfield__input--preferred-name\" type=\"text\" name=\"userapp[preferred-name]\" placeholder=\"Preferred name\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--preferred-name\">Mandatory field : please fill in !</div></div><div class=\"field\"><input class=\"c-textfield__input--phone\" type=\"text\" name=\"userapp[phone]\" placeholder=\"Phone\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--phone\">Please fill field with at least 2 characters!</div></div><div class=\"two fields\"><div class=\"field\"><input class=\"c-textfield__input--birthday\" type=\"text\" name=\"userapp[birthday]\" placeholder=\"Birthday\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--birthday\">Please fill field with at least 2 characters!</div></div><div class=\"field\"><input class=\"c-textfield__input--zip-code\" type=\"text\" name=\"userapp[zip-code]\" placeholder=\"Zip code\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--zip-code\">Please fill field with at least 2 characters!</div></div></div></form></div><div class=\"c-btn c-btn--primary c-application__submit-about ui fluid primary button\" tabindex=\"0\">Continue</div><div class=\"c-application__error\"></div></div>`
-      }
-    ],
-    [
-      {
-        "DOM": `<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"active step\"><div class=\"content\">Question</div></a><a class=\"step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><form class=\"ui form\"><h4 class=\"ui dividing header\">Organizer&#39;s question</h4><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">would you catch it?</div><p>Organizer&#39;s name/role</p></div></div><div class=\"field\"><textarea class=\"c-textfield__input--answer\" name=\"userapp[organizer-question]\" placeholder=\"Please enter your answer here\" required=\"false\"></textarea><div class=\"c-textfield__error c-textfield__error--answer\"></div></div></form></div><div class=\"c-btn c-btn--primary c-application__submit--question ui fluid primary button\" tabindex=\"0\">Continue</div><div class=\"c-application__error\"></div></div>`,
-        "domainAction": {
-          "command": "Update",
-          "context": "USERAPP",
-          "payload": {
-            "about": {
-              "aboutYou": {
-                "superPower": "fly"
-              },
-              "personal": {
-                "birthday": "09.09.09",
-                "legalName": "Kujio",
-                "phone": "1234",
-                "preferredName": "Otadaki",
-                "zipCode": "1231"
-              }
-            },
-            "progress": {
-              "hasApplied": false,
-              "hasReviewedApplication": false,
-              "latestTeamIndex": 0,
-              "step": "Question"
-            },
-            "questions": {
-              "answer": ""
-            },
-            "teams": {
-              "-KFVqOyjPpR4pdgK-0Wr": {
-                "answer": "",
-                "description": "Be one of the first faces people see and direct them their parking spot. Enjoy the many perks of this highly social position. ",
-                "hasBeenJoined": false,
-                "name": "Parking",
-                "question": "Have you worked parking for any other festivals? Which ones?"
-              },
-              "KFVssLvEPsDJUofy1Yd": {
-                "answer": "",
-                "description": "The gateway to Cosmic Alignment! Here, you'll be selling GA tickets, banding guests and checking in artists. This job requires organization and a friendly face.",
-                "hasBeenJoined": false,
-                "name": "Box Office",
-                "question": "Which festivals have you worked Box Office before?"
-              }
-            }
-          }
-        }
-      }
-    ],
-    [
-      {
-        "DOM": `<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"active step\"><div class=\"content\">Question</div></a><a class=\"step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><form class=\"ui form\"><h4 class=\"ui dividing header\">Organizer&#39;s question</h4><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">would you catch it?</div><p>Organizer&#39;s name/role</p></div></div><div class=\"field\"><textarea class=\"c-textfield__input--answer\" name=\"userapp[organizer-question]\" placeholder=\"Please enter your answer here\" required=\"false\"></textarea><div class=\"c-textfield__error c-textfield__error--answer\">Mandatory field : please fill in !</div></div></form></div><div class=\"c-btn c-btn--primary c-application__submit--question ui fluid primary button\" tabindex=\"0\">Continue</div><div class=\"c-application__error\"></div></div>`
-      }
-    ],
-    [
-      {
-        "DOM": `<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"active step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><h4 class=\"ui dividing header\">Select a team</h4><div class=\"c-application__teams-list ui list\"><div class=\"item\"><div class=\"right floated content\"><div class=\"ui button\">X</div></div><img class=\"ui avatar image\" src=\"./assets/images/teams/Parking.jpg\"><div class=\"content\" data-index=\"0\">Parking</div></div><div class=\"item\"><div class=\"right floated content\"><div class=\"ui button\">X</div></div><img class=\"ui avatar image\" src=\"./assets/images/teams/Box Office.jpg\"><div class=\"content\" data-index=\"1\">Box Office</div></div></div></div><div class=\"c-btn c-btn--primary c-application__submit--continue disabled ui fluid primary button\" tabindex=\"0\">Continue</div><div class=\"c-application__error\"></div></div>`,
-        "domainAction": {
-          "command": "Update",
-          "context": "USERAPP",
-          "payload": {
-            "about": {
-              "aboutYou": {
-                "superPower": "fly"
-              },
-              "personal": {
-                "birthday": "09.09.09",
-                "legalName": "Kujio",
-                "phone": "1234",
-                "preferredName": "Otadaki",
-                "zipCode": "1231"
-              }
-            },
-            "progress": {
-              "hasApplied": false,
-              "hasReviewedApplication": false,
-              "latestTeamIndex": 0,
-              "step": "Teams"
-            },
-            "questions": {
-              "answer": "That is what I like"
-            },
-            "teams": {
-              "-KFVqOyjPpR4pdgK-0Wr": {
-                "answer": "",
-                "description": "Be one of the first faces people see and direct them their parking spot. Enjoy the many perks of this highly social position. ",
-                "hasBeenJoined": false,
-                "name": "Parking",
-                "question": "Have you worked parking for any other festivals? Which ones?"
-              },
-              "KFVssLvEPsDJUofy1Yd": {
-                "answer": "",
-                "description": "The gateway to Cosmic Alignment! Here, you'll be selling GA tickets, banding guests and checking in artists. This job requires organization and a friendly face.",
-                "hasBeenJoined": false,
-                "name": "Box Office",
-                "question": "Which festivals have you worked Box Office before?"
-              }
-            }
-          }
-        }
-      }
-    ],
-    [
-      {
-        "DOM": `<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"active step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><h4 class=\"ui dividing header\">Select a team</h4><div class=\"c-application__teams-list ui list\"><div class=\"item\"><div class=\"right floated content\"><div class=\"ui button\">X</div></div><img class=\"ui avatar image\" src=\"./assets/images/teams/Parking.jpg\"><div class=\"content\" data-index=\"0\">Parking</div></div><div class=\"item\"><div class=\"right floated content\"><div class=\"ui button\">X</div></div><img class=\"ui avatar image\" src=\"./assets/images/teams/Box Office.jpg\"><div class=\"content\" data-index=\"1\">Box Office</div></div></div></div><div class=\"c-btn c-btn--primary c-application__submit--continue disabled ui fluid primary button\" tabindex=\"0\">Continue</div><div class=\"c-application__error\"></div></div>`,
-      }
-    ],
-    [
-      {
-        "DOM": "<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"active step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><div class=\"c-application__team_detail-back ui fluid negative button\" tabindex=\"0\">Back to teams</div><div class=\"ui divided selection list\"><a class=\"item\"><div class=\"ui horizontal label\">Parking</div>Be one of the first faces people see and direct them their parking spot. Enjoy the many perks of this highly social position. </a></div><form class=\"ui form\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Have you worked parking for any other festivals? Which ones?</div><p>Team lead&#39;s name/role</p></div></div><div class=\"field\"><textarea class=\"c-textfield__input--team_detail_answer\" name=\"userapp[organizer-question]\" placeholder=\"Please enter your answer here\" required=\"false\"></textarea><div class=\"c-textfield__error c-textfield__error--td\"></div></div></form></div><div class=\"ui fluid buttons\"><button class=\"c-btn c-btn--quiet c-application__submit--team_detail_skip ui button\">Skip this team</button><div class=\"or\"></div><button class=\"c-application__submit--team_detail_join ui positive button\">Join team</button></div><div class=\"c-application__error\"></div></div>"
-      }
-    ],
-    [
-      {
-        "DOM": "<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"active step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><div class=\"c-application__team_detail-back ui fluid negative button\" tabindex=\"0\">Back to teams</div><div class=\"ui divided selection list\"><a class=\"item\"><div class=\"ui horizontal label\">Parking</div>Be one of the first faces people see and direct them their parking spot. Enjoy the many perks of this highly social position. </a></div><form class=\"ui form\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Have you worked parking for any other festivals? Which ones?</div><p>Team lead&#39;s name/role</p></div></div><div class=\"field\"><textarea class=\"c-textfield__input--team_detail_answer\" name=\"userapp[organizer-question]\" placeholder=\"Please enter your answer here\" required=\"false\"></textarea><div class=\"c-textfield__error c-textfield__error--td\">Mandatory field : please fill in !</div></div></form></div><div class=\"ui fluid buttons\"><button class=\"c-btn c-btn--quiet c-application__submit--team_detail_skip ui button\">Skip this team</button><div class=\"or\"></div><button class=\"c-application__submit--team_detail_join ui positive button\">Join team</button></div><div class=\"c-application__error\"></div></div>"
-      }
-    ],
-    [
-      {
-        "DOM": "<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"active step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><div class=\"c-application__team_detail-back ui fluid negative button\" tabindex=\"0\">Back to teams</div><div class=\"ui divided selection list\"><a class=\"item\"><div class=\"ui horizontal label\">Box Office</div>The gateway to Cosmic Alignment! Here, you&#39;ll be selling GA tickets, banding guests and checking in artists. This job requires organization and a friendly face.</a></div><form class=\"ui form\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Which festivals have you worked Box Office before?</div><p>Team lead&#39;s name/role</p></div></div><div class=\"field\"><textarea class=\"c-textfield__input--team_detail_answer\" name=\"userapp[organizer-question]\" placeholder=\"Please enter your answer here\" required=\"false\"></textarea><div class=\"c-textfield__error c-textfield__error--td\"></div></div></form></div><div class=\"ui fluid buttons\"><button class=\"c-btn c-btn--quiet c-application__submit--team_detail_skip ui button\">Skip this team</button><div class=\"or\"></div><button class=\"c-application__submit--team_detail_join ui positive button\">Join team</button></div><div class=\"c-application__error\"></div></div>"
-      }
-    ],
-    [
-      {
-        "DOM": "<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"active step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><div class=\"c-application__team_detail-back ui fluid negative button\" tabindex=\"0\">Back to teams</div><div class=\"ui divided selection list\"><a class=\"item\"><div class=\"ui horizontal label\">Parking</div>Be one of the first faces people see and direct them their parking spot. Enjoy the many perks of this highly social position. </a></div><form class=\"ui form\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Have you worked parking for any other festivals? Which ones?</div><p>Team lead&#39;s name/role</p></div></div><div class=\"field\"><textarea class=\"c-textfield__input--team_detail_answer\" name=\"userapp[organizer-question]\" placeholder=\"Please enter your answer here\" value=\"Team 0 answer\" required=\"false\"></textarea><div class=\"c-textfield__error c-textfield__error--td\"></div></div></form></div><div class=\"ui fluid buttons\"><button class=\"c-btn c-btn--quiet c-application__submit--team_detail_skip ui button\">Skip this team</button><div class=\"or\"></div><button class=\"c-application__submit--team_detail_join ui positive button\">Unjoin team</button></div><div class=\"c-application__error\"></div></div>"
-      }
-    ],
-    [
-      {
-        "DOM": "<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"active step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><h4 class=\"ui dividing header\">Select a team</h4><div class=\"c-application__teams-list ui list\"><div class=\"item\"><div class=\"right floated content\"><div class=\"ui button\">O</div></div><img class=\"ui avatar image\" src=\"./assets/images/teams/Parking.jpg\"><div class=\"content\" data-index=\"0\">Parking</div></div><div class=\"item\"><div class=\"right floated content\"><div class=\"ui button\">X</div></div><img class=\"ui avatar image\" src=\"./assets/images/teams/Box Office.jpg\"><div class=\"content\" data-index=\"1\">Box Office</div></div></div></div><div class=\"c-btn c-btn--primary c-application__submit--continue ui fluid primary button\" tabindex=\"0\">Continue</div><div class=\"c-application__error\"></div></div>"
-      }
-    ],
-    [
-      {
-        "DOM": "<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Does this look good ?</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"step\"><div class=\"content\">Teams</div></a><a class=\"active step\"><div class=\"content\">Review</div></a></div><div class=\"ui one cards\"><div class=\"card\"><div class=\"content\"><i class=\"c-application__change--about right floated edit icon\"></i><div class=\"header\">About you</div><div class=\"ui list\"><div class=\"item\"><div class=\"ui button\"><i class=\"info icon\"></i></div>fly</div><div class=\"item\"><div class=\"ui button\"><i class=\"user outline icon\"></i></div>Kujio (Otadaki)</div><div class=\"item\"><div class=\"ui button\"><i class=\"text telephone icon\"></i></div>1234</div><div class=\"item\"><div class=\"ui button\"><i class=\"birthday icon\"></i></div>1984.09.09</div><div class=\"item\"><div class=\"ui button\"><i class=\"info icon\"></i></div>1231</div></div></div></div></div><div class=\"ui one cards\"><div class=\"card\"><div class=\"content\"><i class=\"c-application__change--question right floated edit icon\"></i><div class=\"header\">Organizer&#39;s question</div><div class=\"ui list message\"><div class=\"item\"><img class=\"ui avatar image\" src=\"./assets/images/avatar/small/matt.jpg\" className=\"ui avatar image\"><div class=\"content\"><div class=\"header\">would you catch it?</div>Organizer name and role</div></div></div><div class=\"description\"><img class=\"ui floated right avatar image\" src=\"./assets/images/avatar/large/elliot.jpg\" className=\"ui floated right avatar image\"><p>That is what I like</p></div></div></div></div><div class=\"ui one cards\"><div class=\"card\"><div class=\"content\"><i class=\"c-application__change--teams right floated edit icon\"></i><div class=\"header\">Team selection</div><div class=\"ui list\"><div class=\"item\"><div class=\"ui button\"><i class=\"info icon\"></i></div>Parking</div></div></div></div></div><div class=\"ui basic segment\"><button class=\"c-application__review--submit ui fluid primary button\">Apply for the things</button></div><div class=\"c-application__error\"></div></div>",
-        "domainAction": {
-          "command": "Update",
-          "context": "USERAPP",
-          "payload": {
-            "about": {
-              "aboutYou": {
-                "superPower": "fly"
-              },
-              "personal": {
-                "birthday": "09.09.09",
-                "legalName": "Kujio",
-                "phone": "1234",
-                "preferredName": "Otadaki",
-                "zipCode": "1231"
-              }
-            },
-            "progress": {
-              "hasApplied": false,
-              "hasReviewedApplication": true,
-              "latestTeamIndex": 0,
-              "step": "Review"
-            },
-            "questions": {
-              "answer": "That is what I like"
-            },
-            "teams": {
-              "-KFVqOyjPpR4pdgK-0Wr": {
-                "answer": "Team 0 answer",
-                "description": "Be one of the first faces people see and direct them their parking spot. Enjoy the many perks of this highly social position. ",
-                "hasBeenJoined": true,
-                "name": "Parking",
-                "question": "Have you worked parking for any other festivals? Which ones?"
-              },
-              "KFVssLvEPsDJUofy1Yd": {
-                "answer": "skipped",
-                "description": "The gateway to Cosmic Alignment! Here, you'll be selling GA tickets, banding guests and checking in artists. This job requires organization and a friendly face.",
-                "hasBeenJoined": false,
-                "name": "Box Office",
-                "question": "Which festivals have you worked Box Office before?"
-              }
-            }
-          }
-        }
-      }
-    ],
-    [
-      {
-        "DOM": "<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"active step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><form class=\"ui form\"><h4 class=\"ui dividing header\">About you</h4><div class=\"field\"><input class=\"c-textfield__input--super-power\" type=\"text\" name=\"userapp[superpower]\" placeholder=\"What is your superpower?\" value=\"fly\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--super-power\"></div></div><h4 class=\"ui dividing header\">Personal details</h4><div class=\"field\"><input class=\"c-textfield__input--legal-name\" type=\"text\" name=\"userapp[legal-name]\" placeholder=\"Legal name\" value=\"Kujio\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--legal-name\"></div></div><div class=\"field\"><input class=\"c-textfield__input--preferred-name\" type=\"text\" name=\"userapp[preferred-name]\" placeholder=\"Preferred name\" value=\"Otadaki\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--preferred-name\"></div></div><div class=\"field\"><input class=\"c-textfield__input--phone\" type=\"text\" name=\"userapp[phone]\" placeholder=\"Phone\" value=\"1234\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--phone\"></div></div><div class=\"two fields\"><div class=\"field\"><input class=\"c-textfield__input--birthday\" type=\"text\" name=\"userapp[birthday]\" placeholder=\"Birthday\" value=\"09.09.09\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--birthday\"></div></div><div class=\"field\"><input class=\"c-textfield__input--zip-code\" type=\"text\" name=\"userapp[zip-code]\" placeholder=\"Zip code\" value=\"1231\" required=\"false\"><div class=\"c-textfield__error c-textfield__error--zip-code\"></div></div></div></form></div><div class=\"c-btn c-btn--primary c-application__submit-about ui fluid primary button\" tabindex=\"0\">Continue</div><div class=\"c-application__error\"></div></div>"
-      }
-    ],
-    [
-      {
-        "DOM": "<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Does this look good ?</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"step\"><div class=\"content\">Teams</div></a><a class=\"active step\"><div class=\"content\">Review</div></a></div><div class=\"ui one cards\"><div class=\"card\"><div class=\"content\"><i class=\"c-application__change--about right floated edit icon\"></i><div class=\"header\">About you</div><div class=\"ui list\"><div class=\"item\"><div class=\"ui button\"><i class=\"info icon\"></i></div>refly</div><div class=\"item\"><div class=\"ui button\"><i class=\"user outline icon\"></i></div>Kujio (Otadaki)</div><div class=\"item\"><div class=\"ui button\"><i class=\"text telephone icon\"></i></div>1234</div><div class=\"item\"><div class=\"ui button\"><i class=\"birthday icon\"></i></div>1984.09.09</div><div class=\"item\"><div class=\"ui button\"><i class=\"info icon\"></i></div>1231</div></div></div></div></div><div class=\"ui one cards\"><div class=\"card\"><div class=\"content\"><i class=\"c-application__change--question right floated edit icon\"></i><div class=\"header\">Organizer&#39;s question</div><div class=\"ui list message\"><div class=\"item\"><img class=\"ui avatar image\" src=\"./assets/images/avatar/small/matt.jpg\" className=\"ui avatar image\"><div class=\"content\"><div class=\"header\">would you catch it?</div>Organizer name and role</div></div></div><div class=\"description\"><img class=\"ui floated right avatar image\" src=\"./assets/images/avatar/large/elliot.jpg\" className=\"ui floated right avatar image\"><p>That is what I like</p></div></div></div></div><div class=\"ui one cards\"><div class=\"card\"><div class=\"content\"><i class=\"c-application__change--teams right floated edit icon\"></i><div class=\"header\">Team selection</div><div class=\"ui list\"><div class=\"item\"><div class=\"ui button\"><i class=\"info icon\"></i></div>Parking</div></div></div></div></div><div class=\"ui basic segment\"><button class=\"c-application__review--submit ui fluid primary button\">Apply for the things</button></div><div class=\"c-application__error\"></div></div>",
-        "domainAction": {
-          "command": "Update",
-          "context": "USERAPP",
-          "payload": {
-            "about": {
-              "aboutYou": {
-                "superPower": "refly"
-              },
-              "personal": {
-                "birthday": "09.09.09",
-                "legalName": "Kujio",
-                "phone": "1234",
-                "preferredName": "Otadaki",
-                "zipCode": "1231"
-              }
-            },
-            "progress": {
-              "hasApplied": false,
-              "hasReviewedApplication": true,
-              "latestTeamIndex": 0,
-              "step": "Review"
-            },
-            "questions": {
-              "answer": "That is what I like"
-            },
-            "teams": {
-              "-KFVqOyjPpR4pdgK-0Wr": {
-                "answer": "Team 0 answer",
-                "description": "Be one of the first faces people see and direct them their parking spot. Enjoy the many perks of this highly social position. ",
-                "hasBeenJoined": true,
-                "name": "Parking",
-                "question": "Have you worked parking for any other festivals? Which ones?"
-              },
-              "KFVssLvEPsDJUofy1Yd": {
-                "answer": "skipped",
-                "description": "The gateway to Cosmic Alignment! Here, you'll be selling GA tickets, banding guests and checking in artists. This job requires organization and a friendly face.",
-                "hasBeenJoined": false,
-                "name": "Box Office",
-                "question": "Which festivals have you worked Box Office before?"
-              }
-            }
-          }
-        }
-      }
-    ],
-    [
-      {
-        "DOM": "<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"active step\"><div class=\"content\">Question</div></a><a class=\"step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><form class=\"ui form\"><h4 class=\"ui dividing header\">Organizer&#39;s question</h4><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">would you catch it?</div><p>Organizer&#39;s name/role</p></div></div><div class=\"field\"><textarea class=\"c-textfield__input--answer\" name=\"userapp[organizer-question]\" placeholder=\"Please enter your answer here\" value=\"That is what I like\" required=\"false\"></textarea><div class=\"c-textfield__error c-textfield__error--answer\"></div></div></form></div><div class=\"c-btn c-btn--primary c-application__submit--question ui fluid primary button\" tabindex=\"0\">Continue</div><div class=\"c-application__error\"></div></div>"
-      }
-    ],
-    [
-      {
-        "DOM": "<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Does this look good ?</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"step\"><div class=\"content\">Teams</div></a><a class=\"active step\"><div class=\"content\">Review</div></a></div><div class=\"ui one cards\"><div class=\"card\"><div class=\"content\"><i class=\"c-application__change--about right floated edit icon\"></i><div class=\"header\">About you</div><div class=\"ui list\"><div class=\"item\"><div class=\"ui button\"><i class=\"info icon\"></i></div>refly</div><div class=\"item\"><div class=\"ui button\"><i class=\"user outline icon\"></i></div>Kujio (Otadaki)</div><div class=\"item\"><div class=\"ui button\"><i class=\"text telephone icon\"></i></div>1234</div><div class=\"item\"><div class=\"ui button\"><i class=\"birthday icon\"></i></div>1984.09.09</div><div class=\"item\"><div class=\"ui button\"><i class=\"info icon\"></i></div>1231</div></div></div></div></div><div class=\"ui one cards\"><div class=\"card\"><div class=\"content\"><i class=\"c-application__change--question right floated edit icon\"></i><div class=\"header\">Organizer&#39;s question</div><div class=\"ui list message\"><div class=\"item\"><img class=\"ui avatar image\" src=\"./assets/images/avatar/small/matt.jpg\" className=\"ui avatar image\"><div class=\"content\"><div class=\"header\">would you catch it?</div>Organizer name and role</div></div></div><div class=\"description\"><img class=\"ui floated right avatar image\" src=\"./assets/images/avatar/large/elliot.jpg\" className=\"ui floated right avatar image\"><p>That is what I like so much</p></div></div></div></div><div class=\"ui one cards\"><div class=\"card\"><div class=\"content\"><i class=\"c-application__change--teams right floated edit icon\"></i><div class=\"header\">Team selection</div><div class=\"ui list\"><div class=\"item\"><div class=\"ui button\"><i class=\"info icon\"></i></div>Parking</div></div></div></div></div><div class=\"ui basic segment\"><button class=\"c-application__review--submit ui fluid primary button\">Apply for the things</button></div><div class=\"c-application__error\"></div></div>",
-        "domainAction": {
-          "command": "Update",
-          "context": "USERAPP",
-          "payload": {
-            "about": {
-              "aboutYou": {
-                "superPower": "refly"
-              },
-              "personal": {
-                "birthday": "09.09.09",
-                "legalName": "Kujio",
-                "phone": "1234",
-                "preferredName": "Otadaki",
-                "zipCode": "1231"
-              }
-            },
-            "progress": {
-              "hasApplied": false,
-              "hasReviewedApplication": true,
-              "latestTeamIndex": 0,
-              "step": "Review"
-            },
-            "questions": {
-              "answer": "That is what I like so much"
-            },
-            "teams": {
-              "-KFVqOyjPpR4pdgK-0Wr": {
-                "answer": "Team 0 answer",
-                "description": "Be one of the first faces people see and direct them their parking spot. Enjoy the many perks of this highly social position. ",
-                "hasBeenJoined": true,
-                "name": "Parking",
-                "question": "Have you worked parking for any other festivals? Which ones?"
-              },
-              "KFVssLvEPsDJUofy1Yd": {
-                "answer": "skipped",
-                "description": "The gateway to Cosmic Alignment! Here, you'll be selling GA tickets, banding guests and checking in artists. This job requires organization and a friendly face.",
-                "hasBeenJoined": false,
-                "name": "Box Office",
-                "question": "Which festivals have you worked Box Office before?"
-              }
-            }
-          }
-        }
-      }
-    ],
-    [
-      {
-        "DOM": "<div class=\"ui raised segment\"><p>You successfully applied! Stay in touch</p></div>",
-        "domainAction": {
-          "command": "Update",
-          "context": "USERAPP",
-          "payload": {
-            "about": {
-              "aboutYou": {
-                "superPower": "refly"
-              },
-              "personal": {
-                "birthday": "09.09.09",
-                "legalName": "Kujio",
-                "phone": "1234",
-                "preferredName": "Otadaki",
-                "zipCode": "1231"
-              }
-            },
-            "progress": {
-              "hasApplied": true,
-              "hasReviewedApplication": true,
-              "latestTeamIndex": 0,
-              "step": "Review"
-            },
-            "questions": {
-              "answer": "That is what I like so much"
-            },
-            "teams": {
-              "-KFVqOyjPpR4pdgK-0Wr": {
-                "answer": "Team 0 answer",
-                "description": "Be one of the first faces people see and direct them their parking spot. Enjoy the many perks of this highly social position. ",
-                "hasBeenJoined": true,
-                "name": "Parking",
-                "question": "Have you worked parking for any other festivals? Which ones?"
-              },
-              "KFVssLvEPsDJUofy1Yd": {
-                "answer": "skipped",
-                "description": "The gateway to Cosmic Alignment! Here, you'll be selling GA tickets, banding guests and checking in artists. This job requires organization and a friendly face.",
-                "hasBeenJoined": false,
-                "name": "Box Office",
-                "question": "Which festivals have you worked Box Office before?"
-              }
-            }
-          }
-        }
+        "DOM": renderAppliedScreen.DOM,
+        "domainAction": updateAction({
+          "step": "Review",
+          superPower : 'refly',
+          "question": "That is what I like so much",
+          "hasBeenJoined": [false, true],
+          answers: [``, `Team 1 answer`],
+          "hasApplied": true,
+          "hasReviewedApplication": true
+        }).domainAction,
       }
     ]
-  ], `["nok","INIT_S","About","About","Question","Question","Teams","Team_Detail","Team_Detail","Team_Detail","Team_Detail","Teams","Review","Question","Review","About","Review","State_Applied"],
-`);
+  ];
+
+  inputSequence.forEach((event, index) => {
+    assert.deepEqual(HTMLedResults[index], expectedOutputSequences[index], `${Object.keys(event)[0]}`)
+  });
 });
 
-QUnit.test("Teams subscription permutations (N = testing events which do not progress the machine, Y = sequence up" +
+QUnit.test("Reviewed application saved in `Question` state : INIT -> Question -> Review -> Applied", function exec_test(assert) {
+  // ["nok","INIT_S","Question","Review","State_Applied"],
+  const inputSequence = [
+    INIT_I,
+    { [FETCH_EV]: appSavedInQuestionState },
+    { [QUESTION_CONTINUE]: appInQUESTIONandValidFormAndNotReviewed },
+    { [APPLICATION_COMPLETED]: {} }
+  ];
+
+  const machine = create_state_machine(fsm, default_settings);
+  const results = inputSequence.map(machine.yield);
+  const HTMLedResults = results.map(outputSequence => {
+    if (outputSequence == null) return null
+    return outputSequence.map(mapObjIndexed((value, sinkName) => {
+      if (sinkName === 'DOM') return convertVNodesToHTML(value)
+      else return value
+    }))
+  });
+
+  assert.deepEqual(HTMLedResults, [
+    [renderINITscreen],
+    [renderQuestionScreen({})],
+    [{
+      DOM: renderReviewScreen({ hasBeenJoined: [true, false] }).DOM, "domainAction":
+      updateAction({
+        hasApplied: false,
+        hasReviewedApplication: true,
+        hasBeenJoined: [true, false],
+        answers: [appSavedInQuestionState.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
+      }).domainAction
+    }],
+    [{
+      DOM: renderAppliedScreen.DOM,
+      "domainAction": updateAction({
+        hasApplied: true,
+        hasReviewedApplication: true,
+        hasBeenJoined: [true, false],
+        answers: [appSavedInQuestionState.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
+      }).domainAction
+    }]], `["nok","INIT_S","Question","Review","State_Applied"]`)
+});
+
+QUnit.test("Reviewed application saved in `Teams` state : INIT -> Teams -> Review -> Applied", function exec_test(assert) {
+  // ["nok","INIT_S","Teams","State_Applied"],
+  const inputSequence = [
+    INIT_I,
+    { [FETCH_EV]: appSavedInTeamsStateWithTeam1Joined },
+    { [TEAM_CONTINUE]: {} },
+    { [APPLICATION_COMPLETED]: {} }
+  ];
+
+  const machine = create_state_machine(fsm, default_settings);
+  const results = inputSequence.map(machine.yield);
+  const HTMLedResults = results.map(outputSequence => {
+    if (outputSequence == null) return null
+    return outputSequence.map(mapObjIndexed((value, sinkName) => {
+      if (sinkName === 'DOM') return convertVNodesToHTML(value)
+      else return value
+    }))
+  });
+
+  assert.deepEqual(HTMLedResults, [
+    [renderINITscreen],
+    [renderTeamScreen([true, false])],
+    [{
+      DOM: renderReviewScreen({ hasBeenJoined: [true, false] }).DOM, "domainAction":
+      updateAction({
+        hasApplied: false,
+        hasReviewedApplication: true,
+        hasBeenJoined: [true, false],
+        answers: [appSavedInTeamsStateWithTeam1Joined.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
+      }).domainAction
+    }],
+    [{
+      DOM: renderAppliedScreen.DOM,
+      "domainAction": updateAction({
+        hasApplied: true,
+        hasReviewedApplication: true,
+        hasBeenJoined: [true, false],
+        answers: [appSavedInTeamsStateWithTeam1Joined.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
+      }).domainAction
+    }]], `["nok","INIT_S","Teams","State_Applied"]`)
+});
+
+QUnit.test("Reviewed application saved in `Review` state : INIT -> Review -> Applied", function exec_test(assert) {
+  // ["nok","INIT_S","Review","Teams","State_Applied"]
+  const inputSequence = [
+    INIT_I,
+    { [FETCH_EV]: appSavedInReviewState },
+    { [APPLICATION_COMPLETED]: {} }
+  ];
+
+  const machine = create_state_machine(fsm, default_settings);
+  const results = inputSequence.map(machine.yield);
+  const HTMLedResults = results.map(outputSequence => {
+    if (outputSequence == null) return null
+    return outputSequence.map(mapObjIndexed((value, sinkName) => {
+      if (sinkName === 'DOM') return convertVNodesToHTML(value)
+      else return value
+    }))
+  });
+
+  assert.deepEqual(HTMLedResults, [
+    [renderINITscreen],
+    [{ DOM: renderReviewScreen({ hasBeenJoined: [true, false] }).DOM }],
+    [{
+      DOM: renderAppliedScreen.DOM,
+      "domainAction": updateAction({
+        hasApplied: true,
+        hasReviewedApplication: true,
+        hasBeenJoined: [true, false],
+        answers: [appSavedInReviewState.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
+      }).domainAction
+    }]], `["nok","INIT_S","Review","Teams","State_Applied"]`)
+});
+
+// old for reference
+QUnit.skip("Teams subscription permutations (N = testing events which do not progress the machine, Y = sequence up" +
   " to the final state)", function exec_test(assert) {
   const clickedOnSkipTeam = teamIndex => ({
     formData: {
@@ -1494,239 +1012,7 @@ QUnit.test("Teams subscription permutations (N = testing events which do not pro
   HTMLedResults.forEach((htmlResult, index) => assert.deepEqual(htmlResult, outputs[index], testDescriptions[index]))
 });
 
-QUnit.test("Reviewed application saved in `Question` state : INIT -> Question -> Review -> Applied", function exec_test(assert) {
-  // ["nok","INIT_S","Question","Review","State_Applied"],
-  const inputSequence = [
-    INIT_I,
-    { [FETCH_EV]: appSavedInQuestionState },
-    { [QUESTION_CONTINUE]: appInQUESTIONandValidFormAndNotReviewed },
-    { [APPLICATION_COMPLETED]: {} }
-  ];
-
-  const machine = create_state_machine(fsm, default_settings);
-  const results = inputSequence.map(machine.yield);
-  const HTMLedResults = results.map(outputSequence => {
-    if (outputSequence == null) return null
-    return outputSequence.map(mapObjIndexed((value, sinkName) => {
-      if (sinkName === 'DOM') return convertVNodesToHTML(value)
-      else return value
-    }))
-  });
-
-  assert.deepEqual(HTMLedResults, [
-    [renderINITscreen],
-    [renderQuestionScreen()],
-    [{
-      DOM: renderReviewScreen({ hasBeenJoined: [true, false] }).DOM, "domainAction":
-      updateAction({
-        hasApplied: false,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, false],
-        answers: [appSavedInQuestionState.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
-      }).domainAction
-    }],
-    [{
-      DOM: renderAppliedScreen.DOM,
-      "domainAction": updateAction({
-        hasApplied: true,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, false],
-        answers: [appSavedInQuestionState.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
-      }).domainAction
-    }]], `["nok","INIT_S","Question","Review","State_Applied"]`)
-});
-
-QUnit.test("Reviewed application saved in `Teams` state : INIT -> Teams -> Review -> Applied", function exec_test(assert) {
-  // ["nok","INIT_S","Teams","State_Applied"],
-  const inputSequence = [
-    INIT_I,
-    { [FETCH_EV]: appSavedInTeamsStateWithTeam1Joined },
-    { [TEAM_CONTINUE]: {} },
-    { [APPLICATION_COMPLETED]: {} }
-  ];
-
-  const machine = create_state_machine(fsm, default_settings);
-  const results = inputSequence.map(machine.yield);
-  const HTMLedResults = results.map(outputSequence => {
-    if (outputSequence == null) return null
-    return outputSequence.map(mapObjIndexed((value, sinkName) => {
-      if (sinkName === 'DOM') return convertVNodesToHTML(value)
-      else return value
-    }))
-  });
-
-  assert.deepEqual(HTMLedResults, [
-    [renderINITscreen],
-    [renderTeamScreen([true, false])],
-    [{
-      DOM: renderReviewScreen({ hasBeenJoined: [true, false] }).DOM, "domainAction":
-      updateAction({
-        hasApplied: false,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, false],
-        answers: [appSavedInTeamsStateWithTeam1Joined.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
-      }).domainAction
-    }],
-    [{
-      DOM: renderAppliedScreen.DOM,
-      "domainAction": updateAction({
-        hasApplied: true,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, false],
-        answers: [appSavedInTeamsStateWithTeam1Joined.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
-      }).domainAction
-    }]], `["nok","INIT_S","Teams","State_Applied"]`)
-});
-
-QUnit.test("Reviewed application saved in `Review` state : INIT -> Review -> Applied", function exec_test(assert) {
-  // ["nok","INIT_S","Review","Teams","State_Applied"]
-  const inputSequence = [
-    INIT_I,
-    { [FETCH_EV]: appSavedInReviewState },
-    { [APPLICATION_COMPLETED]: {} }
-  ];
-
-  const machine = create_state_machine(fsm, default_settings);
-  const results = inputSequence.map(machine.yield);
-  const HTMLedResults = results.map(outputSequence => {
-    if (outputSequence == null) return null
-    return outputSequence.map(mapObjIndexed((value, sinkName) => {
-      if (sinkName === 'DOM') return convertVNodesToHTML(value)
-      else return value
-    }))
-  });
-
-  assert.deepEqual(HTMLedResults, [
-    [renderINITscreen],
-    [{ DOM: renderReviewScreen({ hasBeenJoined: [true, false] }).DOM }],
-    [{
-      DOM: renderAppliedScreen.DOM,
-      "domainAction": updateAction({
-        hasApplied: true,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, false],
-        answers: [appSavedInReviewState.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
-      }).domainAction
-    }]], `["nok","INIT_S","Review","Teams","State_Applied"]`)
-});
-
-// Skipped - can be safely deleted - kept for information only
-QUnit.skip("n permutations generation", function exec_test(assert) {
-  function genNperm(n) {
-    if (n === 0) {
-      return []
-    }
-    else if (n === 1) {
-      return [[1], []]
-    }
-    else {
-      const seed = genNperm(n - 1);
-      const nPerm = seed.reduce((acc, perm) => {
-        return acc.concat([perm.concat([n])]).concat(perm.map((x, index, arr) => {
-          return arr.slice(0, index).concat([n]).concat(arr.slice(index))
-        }))
-      }, seed)
-      return nPerm
-    }
-  }
-
-  assert.deepEqual(genNperm(2), [
-    [],
-    [1],
-    [2],
-    [1, 2],
-    [2, 1],
-  ], `2`)
-  assert.deepEqual(genNperm(3), [
-    [],
-    [1],
-    [2],
-    [3],
-    [1, 2],
-    [2, 1],
-    [1, 3],
-    [3, 1],
-    [2, 3],
-    [3, 2],
-    [1, 2, 3],
-    [3, 1, 2],
-    [1, 3, 2],
-    [2, 1, 3],
-    [3, 2, 1],
-    [2, 3, 1],
-  ], `3`)
-  assert.deepEqual(genNperm(4), [
-    [],
-    [1],
-    [2],
-    [3],
-    [4],
-    [1, 2],
-    [1, 3],
-    [1, 4],
-    [2, 1],
-    [2, 3],
-    [2, 4],
-    [3, 1],
-    [3, 2],
-    [3, 4],
-    [4, 1],
-    [4, 2],
-    [4, 3],
-    [1, 2, 3],
-    [1, 2, 4],
-    [1, 3, 2],
-    [1, 3, 4],
-    [1, 4, 2],
-    [1, 4, 3],
-    [2, 1, 3],
-    [2, 1, 4],
-    [2, 3, 1],
-    [2, 3, 4],
-    [2, 4, 1],
-    [2, 4, 3],
-    [3, 1, 2],
-    [3, 1, 4],
-    [3, 2, 1],
-    [3, 2, 4],
-    [3, 4, 1],
-    [3, 4, 2],
-    [4, 1, 2],
-    [4, 1, 3],
-    [4, 2, 1],
-    [4, 2, 3],
-    [4, 3, 1],
-    [4, 3, 2],
-    [1, 2, 3, 4],
-    [1, 2, 4, 3],
-    [1, 3, 2, 4],
-    [1, 3, 4, 2],
-    [1, 4, 2, 3],
-    [1, 4, 3, 2],
-    [2, 1, 3, 4],
-    [2, 1, 4, 3],
-    [2, 3, 1, 4],
-    [2, 3, 4, 1],
-    [2, 4, 3, 1],
-    [2, 4, 1, 3],
-    [3, 1, 2, 4],
-    [3, 1, 4, 2],
-    [3, 2, 1, 4],
-    [3, 2, 4, 1],
-    [3, 4, 1, 2],
-    [3, 4, 2, 1],
-    [4, 1, 2, 3],
-    [4, 1, 3, 2],
-    [4, 2, 1, 3],
-    [4, 2, 3, 1],
-    [4, 3, 1, 2],
-    [4, 3, 2, 1],
-  ], `4`);
-
-});
-
-// Skipped - moved to another branch
-QUnit.test("Teams subscription permutations", function exec_test(assert) {
+QUnit.skip("Teams subscription permutations", function exec_test(assert) {
   const clickedOnSkipTeam = teamIndex => ({
     formData: {
       'answer': `Team ${teamIndex} skipped`
@@ -1827,6 +1113,7 @@ QUnit.test("Teams subscription permutations", function exec_test(assert) {
     arrTeamInputSequences
   );
 
+  // TODO : rwrite in a streamy way : for each HTMLedResults, run the assert
   const arrResults = reviewedAppTestSequences
     .map(sequence => {
       const machine = create_state_machine(fsm, default_settings);
@@ -1891,7 +1178,7 @@ QUnit.test("Teams subscription permutations", function exec_test(assert) {
   };
   const outputSequenceStruct = teamInputSequenceGenerator.map(permutation => {
     return permutation.reduce(generateTeamOutputSequence,
-      { latestTeamIndex: 0, latestAnswer: [`Team 0 answer`, ``], hasBeenJoined: [true, false], isValidSequence : true })
+      { latestTeamIndex: 0, latestAnswer: [`Team 0 answer`, ``], hasBeenJoined: [true, false], isValidSequence: true })
   });
   const outputs = [
     // [joinInvalid, joinValid, skip], // N
