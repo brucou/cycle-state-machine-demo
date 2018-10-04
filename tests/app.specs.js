@@ -5,8 +5,8 @@ import { fsm } from "../src/processApplication/fsmSpecs"
 import {
   ABOUT_CONTINUE, APPLICATION_COMPLETED, BACK_TEAM_CLICKED, CHANGE_ABOUT, CHANGE_QUESTION,
   CONTRACT_MODEL_UPDATE_FN_RETURN_VALUE, FETCH_EV, JOIN_OR_UNJOIN_TEAM_CLICKED, MANDATORY_PLEASE_FILL_IN_VALID_ERROR,
-  MIN_LENGTH_VALID_ERROR, QUESTION_CONTINUE, SKIP_TEAM_CLICKED, STATE_ABOUT, STATE_QUESTION, STATE_TEAMS, STEP_REVIEW,
-  TEAM_CLICKED, TEAM_CONTINUE
+  MIN_LENGTH_VALID_ERROR, QUESTION_CONTINUE, SKIP_TEAM_CLICKED, STATE_ABOUT, STATE_QUESTION, STATE_TEAMS, STEP_ABOUT,
+  STEP_REVIEW, TEAM_CLICKED, TEAM_CONTINUE
 } from "../src/processApplication/properties"
 import {
   ACTION_IDENTITY, computeTimesCircledOn, create_state_machine, decorateWithEntryActions, generateTestsFromFSM,
@@ -96,7 +96,22 @@ const teamsInfo = {
     answer: ''
   },
 };
-const emptyTeamsInfo = {};
+const unjoinedTeamsInfo = {
+  "-KFVqOyjPpR4pdgK-0Wr": {
+    description: "Be one of the first faces people see and direct them their parking spot. Enjoy the many perks of this highly social position. ",
+    name: "Parking",
+    question: "Have you worked parking for any other festivals? Which ones?",
+    hasBeenJoined: false,
+    answer: ''
+  },
+  "KFVssLvEPsDJUofy1Yd": {
+    description: "The gateway to Cosmic Alignment! Here, you'll be selling GA tickets, banding guests and checking in artists. This job requires organization and a friendly face.",
+    name: "Box Office",
+    question: "Which festivals have you worked Box Office before?",
+    hasBeenJoined: false,
+    answer: ''
+  },
+};
 const maxResults = 700;
 let resultNumber = 0;
 // Helpers
@@ -159,7 +174,20 @@ function makeUserApplication({ superPower, phone, preferredName, zipCode, legalN
 
 QUnit.module("Testing demo app", {});
 
-const appUnsavedWithNoData = makeAppFixture(undefined);
+const appUnsavedWithNoData = makeAppFixture(makeUserApplication({
+  superPower: '',
+  phone: '',
+  preferredName: '',
+  zipCode: '',
+  legalName: '',
+  birthday: '',
+  answer: '',
+  teamsInfo: unjoinedTeamsInfo,
+  step: STEP_ABOUT,
+  hasApplied: false,
+  hasReviewedApplication: false,
+  latestTeamIndex: 0
+}));
 const appInABOUTandInvalidForm = {
   formData: {
     superPower: '',
@@ -372,6 +400,8 @@ const updateAction = ({ step, superPower, hasApplied, hasReviewedApplication, ha
     "command": "Update",
     "context": "USERAPP",
     "payload": {
+      userKey: USER_KEY,
+      opportunityKey: OP_KEY,
       "about": {
         "aboutYou": {
           superPower: superPower || 'fly'
@@ -509,9 +539,9 @@ QUnit.test(`INIT -> About -invalid-> About -> Question -invalid-> Question -> Te
     })],
     [
       {
-        "DOM": renderReviewScreen({ hasBeenJoined: [false, true], superPower : 'refly' }).DOM,
+        "DOM": renderReviewScreen({ hasBeenJoined: [false, true], superPower: 'refly' }).DOM,
         "domainAction": updateAction({
-          superPower : 'refly',
+          superPower: 'refly',
           "step": "Review",
           "question": "That is what I like",
           "hasBeenJoined": [false, true],
@@ -524,10 +554,14 @@ QUnit.test(`INIT -> About -invalid-> About -> Question -invalid-> Question -> Te
     [renderQuestionScreen({ answer: appInQUESTIONandValidFormAndNotReviewed.formData.answer })],
     [
       {
-        "DOM": renderReviewScreen({ hasBeenJoined: [false, true] , superPower : 'refly', question : "That is what I like so much" }).DOM,
+        "DOM": renderReviewScreen({
+          hasBeenJoined: [false, true],
+          superPower: 'refly',
+          question: "That is what I like so much"
+        }).DOM,
         "domainAction": updateAction({
           "step": "Review",
-          superPower : 'refly',
+          superPower: 'refly',
           "question": "That is what I like so much",
           "hasBeenJoined": [false, true],
           answers: [``, `Team 1 answer`],
@@ -541,7 +575,7 @@ QUnit.test(`INIT -> About -invalid-> About -> Question -invalid-> Question -> Te
         "DOM": renderAppliedScreen.DOM,
         "domainAction": updateAction({
           "step": "Review",
-          superPower : 'refly',
+          superPower: 'refly',
           "question": "That is what I like so much",
           "hasBeenJoined": [false, true],
           answers: [``, `Team 1 answer`],
@@ -557,6 +591,7 @@ QUnit.test(`INIT -> About -invalid-> About -> Question -invalid-> Question -> Te
   });
 });
 
+// TODO :?
 QUnit.test("Reviewed application saved in `Question` state : INIT -> Question -> Review -> Applied", function exec_test(assert) {
   // ["nok","INIT_S","Question","Review","State_Applied"],
   const inputSequence = [
@@ -578,13 +613,14 @@ QUnit.test("Reviewed application saved in `Question` state : INIT -> Question ->
 
   assert.deepEqual(HTMLedResults, [
     [renderINITscreen],
-    [renderQuestionScreen({})],
+    [renderQuestionScreen({answer: `That is what I like`})],
     [{
       DOM: renderReviewScreen({ hasBeenJoined: [true, false] }).DOM, "domainAction":
       updateAction({
         hasApplied: false,
         hasReviewedApplication: true,
         hasBeenJoined: [true, false],
+        question : `That is what I like`,
         answers: [appSavedInQuestionState.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
       }).domainAction
     }],
@@ -592,6 +628,7 @@ QUnit.test("Reviewed application saved in `Question` state : INIT -> Question ->
       DOM: renderAppliedScreen.DOM,
       "domainAction": updateAction({
         hasApplied: true,
+        question : `That is what I like`,
         hasReviewedApplication: true,
         hasBeenJoined: [true, false],
         answers: [appSavedInQuestionState.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
@@ -625,6 +662,7 @@ QUnit.test("Reviewed application saved in `Teams` state : INIT -> Teams -> Revie
       DOM: renderReviewScreen({ hasBeenJoined: [true, false] }).DOM, "domainAction":
       updateAction({
         hasApplied: false,
+        question : `That is what I like`,
         hasReviewedApplication: true,
         hasBeenJoined: [true, false],
         answers: [appSavedInTeamsStateWithTeam1Joined.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
@@ -634,6 +672,7 @@ QUnit.test("Reviewed application saved in `Teams` state : INIT -> Teams -> Revie
       DOM: renderAppliedScreen.DOM,
       "domainAction": updateAction({
         hasApplied: true,
+        question : `That is what I like`,
         hasReviewedApplication: true,
         hasBeenJoined: [true, false],
         answers: [appSavedInTeamsStateWithTeam1Joined.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
@@ -666,6 +705,7 @@ QUnit.test("Reviewed application saved in `Review` state : INIT -> Review -> App
       DOM: renderAppliedScreen.DOM,
       "domainAction": updateAction({
         hasApplied: true,
+        question : `That is what I like`,
         hasReviewedApplication: true,
         hasBeenJoined: [true, false],
         answers: [appSavedInReviewState.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
