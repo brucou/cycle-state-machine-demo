@@ -1,8 +1,9 @@
+import { mapOverObj } from "fp-rosetree"
+import toHTML from "snabbdom-to-html";
+
 export function computeTimesCircledOn(edgePath, edge) {
   return edgePath.reduce((acc, edgeInEdgePath) => edgeInEdgePath === edge ? acc + 1 : acc, 0);
 }
-import { mapOverObj } from "fp-rosetree"
-import toHTML from "snabbdom-to-html";
 
 function isFunction(obj) {
   return typeof obj === 'function'
@@ -35,11 +36,11 @@ export function formatResult(result) {
   }
 }
 
-export function formatMap(mapObj){
+export function formatMap(mapObj) {
   return Array.from(mapObj.keys()).map(key => ([key, formatFunction(mapObj.get(key))]))
 }
 
-export function formatFunction(fn){
+export function formatFunction(fn) {
   return fn.name || fn.displayName || 'anonymous'
 }
 
@@ -62,6 +63,7 @@ export function assertContract(contractFn, contractArgs, errorMessage) {
 }
 
 export function isBoolean(obj) {return typeof(obj) === 'boolean'}
+
 export function isUpdateOperation(obj) {
   return (typeof(obj) === 'object' && Object.keys(obj).length === 0) ||
     (
@@ -87,7 +89,7 @@ export function genNperm(n) {
     return []
   }
   else if (n === 1) {
-    return [[], [1] ]
+    return [[], [1]]
   }
   else {
     const seed = genNperm(n - 1);
@@ -100,3 +102,45 @@ export function genNperm(n) {
     return nPerm
   }
 }
+
+/**
+ *
+ * @param {Array<T>} vector
+ * @param {Array<Array<U>>} matrix
+ * @return {Array<Array<T|U>>}
+ */
+export function multiConcatLeft(vector, matrix) {
+  return matrix.map(arrU => vector.concat(arrU))
+}
+
+/**
+ *
+ * @param {Array<Array<U>>} matrix
+ * @param {Array<T>} vector
+ * @return {Array<Array<T|U>>}
+ */
+export function multiConcatRight(matrix, vector) {
+  return matrix.map(arrU => arrU.concat(vector))
+}
+
+/**
+ * @typedef {{displayName: string, email: string, phoneNumber: string}} User
+ */
+/**
+ * @typedef {{description: string, question: string}} Opportunity
+ */
+// TODO : solve inconsistency in project type : cf PROJECT
+/**
+ * @typedef {{name: string, date: string, location: string}} Project
+ */
+/**
+ * @typedef {{teamKey:String, authorProfileKey : String, description: String, name: String, question: String, project:
+ *   {description: String, name: String, ownerProfileKey: String }}} Team
+ */
+
+/**
+ * @typedef {{userKey: string, opportunityKey: string, about: {aboutYou: {superPower: *}, personal: {phone: *,
+ *   preferredName: *, zipCode: *, legalName: *, birthday: *}}, questions: {answer: *}, teams: *, progress: {step: *,
+ *   hasApplied: *, hasReviewedApplication: *, latestTeamIndex: *}}} UserApplication
+ */
+

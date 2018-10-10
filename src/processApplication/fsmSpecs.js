@@ -12,7 +12,7 @@ import {
 } from './fsmActions';
 import {
   initializeModel, initializeModelAndStepReview, updateModelWithAboutStepValidationMessages,
-  updateModelWithJoinedOrUnjoinedTeamData, updateModelWithJoinedTeamData, updateModelWithQuestionValidationMessages,
+  updateModelWithJoinedTeamData, updateModelWithQuestionValidationMessages,
   updateModelWithSelectedTeamData, updateModelWithSkippedTeamData, updateModelWithStepOnly,
   updateModelWithTeamDetailAnswerAndNextStep, updateModelWithTeamDetailValidationMessages,
   updateModelWithUnjoinedTeamData
@@ -98,106 +98,106 @@ const states = {
 /** @type Array<Transition>*/
 const transitionsWithoutRenderActions = [
   { from: INIT_STATE, event: INIT_EVENT, to: INIT_S, action: identity },
-  {
-    from: INIT_S, event: FETCH_EV, guards: [
-      { predicate: hasApplied, to: STATE_REVIEW, action: initializeModelAndStepReview },
-      { predicate: both(complement(hasApplied), isStepAbout), to: STATE_ABOUT, action: initializeModel },
-      { predicate: isStepQuestion, to: STATE_QUESTION, action: initializeModel },
-      { predicate: isStepTeams, to: STATE_TEAMS, action: initializeModel },
-      { predicate: isStepReview, to: STATE_REVIEW, action: initializeModel },
-    ]
-  },
-  {
-    from: STATE_ABOUT, event: ABOUT_CONTINUE, guards: [
-      {
-        predicate: both(isFormValid, complement(hasReachedReviewStep)),
-        to: STATE_QUESTION,
-        action: updateUserAppAndRenderQuestionStep
-      },
-      {
-        predicate: both(isFormValid, hasReachedReviewStep),
-        to: STATE_REVIEW,
-        action: updateUserAppAndRenderReviewStep
-      },
-      { predicate: complement(isFormValid), to: STATE_ABOUT, action: updateModelWithAboutStepValidationMessages }
-    ]
-  },
-  {
-    from: STATE_QUESTION, event: QUESTION_CONTINUE, guards: [
-      {
-        predicate: both(isFormValid, complement(hasReachedReviewStep)),
-        to: STATE_TEAMS,
-        action: updateUserAppAndRenderTeamsStepT
-      },
-      {
-        predicate: both(isFormValid, hasReachedReviewStep),
-        to: STATE_REVIEW,
-        action: updateUserAppAndRenderReviewStepR
-      },
-      { predicate: complement(isFormValid), to: STATE_QUESTION, action: updateModelWithQuestionValidationMessages }
-    ]
-  },
-  { from: STATE_TEAMS, event: TEAM_CLICKED, to: STATE_TEAM_DETAIL, action: updateModelWithSelectedTeamData },
-  {
-    from: STATE_TEAM_DETAIL, event: SKIP_TEAM_CLICKED, guards: [
-      {
-        predicate: complement(isTeamJoinedAndFormInvalid),
-        to: STATE_TEAM_DETAIL,
-        action: updateModelWithSkippedTeamData
-      },
-      { predicate: isTeamJoinedAndFormInvalid, to: STATE_TEAM_DETAIL, action: updateModelWithTeamDetailValidationMessages },
-    ]
-  },
-  {
-    from: STATE_TEAM_DETAIL,
-    event: JOIN_OR_UNJOIN_TEAM_CLICKED,
-    guards: [
-      { predicate: isTeamJoined, to: STATE_TEAM_DETAIL, action: updateModelWithUnjoinedTeamData },
-      { predicate: isTeamNotJoinedAndFormValid, to: STATE_TEAM_DETAIL, action: updateModelWithJoinedTeamData },
-      {
-        predicate: isTeamNotJoinedAndFormInvalid,
-        to: STATE_TEAM_DETAIL,
-        action: updateModelWithTeamDetailValidationMessages
-      }
-    ]
-  },
-  {
-    from: STATE_TEAM_DETAIL,
-    event: BACK_TEAM_CLICKED,
-    guards: [
-      {
-        predicate: isTeamJoinedAndFormInvalid,
-        to: STATE_TEAM_DETAIL,
-        action: updateModelWithTeamDetailValidationMessages
-      },
-      {
-        predicate: complement(isTeamJoinedAndFormInvalid),
-        to: STATE_TEAMS,
-        action: updateModelWithTeamDetailAnswerAndNextStep
-      },
-    ],
-  },
-  {
-    from: STATE_TEAMS,
-    event: TEAM_CONTINUE,
-    guards: [
-      {
-        predicate: hasJoinedAtLeastOneTeam,
-        to: STATE_REVIEW,
-        action: updateUserAppWithHasReviewed
-      },
-      {
-        predicate: complement(hasJoinedAtLeastOneTeam),
-        to: STATE_TEAMS,
-        action: identity
-      }
-    ]
-  },
-  { from: STATE_REVIEW, event: CHANGE_ABOUT, to: STATE_ABOUT, action: updateModelWithStepOnly(STEP_ABOUT) },
-  { from: STATE_REVIEW, event: CHANGE_QUESTION, to: STATE_QUESTION, action: updateModelWithStepOnly(STEP_QUESTION) },
-  { from: STATE_REVIEW, event: CHANGE_TEAMS, to: STATE_TEAMS, action: updateModelWithStepOnly(STEP_TEAMS) },
-  { from: STATE_REVIEW, event: APPLICATION_COMPLETED, to: STATE_APPLIED, action: updateUserAppWithHasApplied },
-];
+    {
+      from: INIT_S, event: FETCH_EV, guards: [
+        { predicate: hasApplied, to: STATE_REVIEW, action: initializeModelAndStepReview },
+        { predicate: both(complement(hasApplied), isStepAbout), to: STATE_ABOUT, action: initializeModel },
+        { predicate: isStepQuestion, to: STATE_QUESTION, action: initializeModel },
+        { predicate: isStepTeams, to: STATE_TEAMS, action: initializeModel },
+        { predicate: isStepReview, to: STATE_REVIEW, action: initializeModel },
+      ]
+    },
+    {
+      from: STATE_ABOUT, event: ABOUT_CONTINUE, guards: [
+        {
+          predicate: both(isFormValid, complement(hasReachedReviewStep)),
+          to: STATE_QUESTION,
+          action: updateUserAppAndRenderQuestionStep
+        },
+        {
+          predicate: both(isFormValid, hasReachedReviewStep),
+          to: STATE_REVIEW,
+          action: updateUserAppAndRenderReviewStep
+        },
+        { predicate: complement(isFormValid), to: STATE_ABOUT, action: updateModelWithAboutStepValidationMessages }
+      ]
+    },
+    {
+      from: STATE_QUESTION, event: QUESTION_CONTINUE, guards: [
+        {
+          predicate: both(isFormValid, complement(hasReachedReviewStep)),
+          to: STATE_TEAMS,
+          action: updateUserAppAndRenderTeamsStepT
+        },
+        {
+          predicate: both(isFormValid, hasReachedReviewStep),
+          to: STATE_REVIEW,
+          action: updateUserAppAndRenderReviewStepR
+        },
+        { predicate: complement(isFormValid), to: STATE_QUESTION, action: updateModelWithQuestionValidationMessages }
+      ]
+    },
+    { from: STATE_TEAMS, event: TEAM_CLICKED, to: STATE_TEAM_DETAIL, action: updateModelWithSelectedTeamData },
+    {
+      from: STATE_TEAM_DETAIL, event: SKIP_TEAM_CLICKED, guards: [
+        {
+          predicate: complement(isTeamJoinedAndFormInvalid),
+          to: STATE_TEAM_DETAIL,
+          action: updateModelWithSkippedTeamData
+        },
+        { predicate: isTeamJoinedAndFormInvalid, to: STATE_TEAM_DETAIL, action: updateModelWithTeamDetailValidationMessages },
+      ]
+    },
+    {
+      from: STATE_TEAM_DETAIL,
+      event: JOIN_OR_UNJOIN_TEAM_CLICKED,
+      guards: [
+        { predicate: isTeamJoined, to: STATE_TEAM_DETAIL, action: updateModelWithUnjoinedTeamData },
+        { predicate: isTeamNotJoinedAndFormValid, to: STATE_TEAM_DETAIL, action: updateModelWithJoinedTeamData },
+        {
+          predicate: isTeamNotJoinedAndFormInvalid,
+          to: STATE_TEAM_DETAIL,
+          action: updateModelWithTeamDetailValidationMessages
+        }
+      ]
+    },
+    {
+      from: STATE_TEAM_DETAIL,
+      event: BACK_TEAM_CLICKED,
+      guards: [
+        {
+          predicate: isTeamJoinedAndFormInvalid,
+          to: STATE_TEAM_DETAIL,
+          action: updateModelWithTeamDetailValidationMessages
+        },
+        {
+          predicate: complement(isTeamJoinedAndFormInvalid),
+          to: STATE_TEAMS,
+          action: updateModelWithTeamDetailAnswerAndNextStep
+        },
+      ],
+    },
+    {
+      from: STATE_TEAMS,
+      event: TEAM_CONTINUE,
+      guards: [
+        {
+          predicate: hasJoinedAtLeastOneTeam,
+          to: STATE_REVIEW,
+          action: updateUserAppWithHasReviewed
+        },
+        {
+          predicate: complement(hasJoinedAtLeastOneTeam),
+          to: STATE_TEAMS,
+          action: identity
+        }
+      ]
+    },
+    { from: STATE_REVIEW, event: CHANGE_ABOUT, to: STATE_ABOUT, action: updateModelWithStepOnly(STEP_ABOUT) },
+    { from: STATE_REVIEW, event: CHANGE_QUESTION, to: STATE_QUESTION, action: updateModelWithStepOnly(STEP_QUESTION) },
+    { from: STATE_REVIEW, event: CHANGE_TEAMS, to: STATE_TEAMS, action: updateModelWithStepOnly(STEP_TEAMS) },
+    { from: STATE_REVIEW, event: APPLICATION_COMPLETED, to: STATE_APPLIED, action: updateUserAppWithHasApplied },
+  ];
 
 const entryActions = {
   [INIT_S]: renderInitScreen,

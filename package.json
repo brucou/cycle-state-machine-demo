@@ -27,7 +27,8 @@
     "@rxcc/contracts": "^0.1.11",
     "@rxcc/utils": "^0.1.8",
     "localforage": "^1.7.0",
-    "state-transducer": "^0.7.8",
-    "fp-rosetree": "^0.6.1"
+    "state-transducer": "^0.7.10",
+    "fp-rosetree": "^0.6.1",
+    "graph-adt": "^0.6.1"
   }
 }

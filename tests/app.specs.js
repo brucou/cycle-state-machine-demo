@@ -1,26 +1,40 @@
 import * as QUnit from "qunitjs"
 import * as Rx from "rx"
-import { assertContract, convertVNodesToHTML, genNperm, isArrayUpdateOperations } from "./helpers"
+import {
+  assertContract, convertVNodesToHTML, isArrayUpdateOperations, multiConcatLeft, multiConcatRight
+} from "./helpers"
 import { fsm } from "../src/processApplication/fsmSpecs"
 import {
   ABOUT_CONTINUE, APPLICATION_COMPLETED, BACK_TEAM_CLICKED, CHANGE_ABOUT, CHANGE_QUESTION,
-  CONTRACT_MODEL_UPDATE_FN_RETURN_VALUE, FETCH_EV, JOIN_OR_UNJOIN_TEAM_CLICKED, MANDATORY_PLEASE_FILL_IN_VALID_ERROR,
-  MIN_LENGTH_VALID_ERROR, QUESTION_CONTINUE, SKIP_TEAM_CLICKED, STATE_ABOUT, STATE_QUESTION, STATE_TEAMS, STEP_ABOUT,
-  STEP_REVIEW, TEAM_CLICKED, TEAM_CONTINUE
+  CONTRACT_MODEL_UPDATE_FN_RETURN_VALUE, FETCH_EV, JOIN_OR_UNJOIN_TEAM_CLICKED, QUESTION_CONTINUE, SKIP_TEAM_CLICKED,
+  STATE_REVIEW, STATE_TEAM_DETAIL, STATE_TEAMS, STEP_REVIEW, TEAM_CLICKED, TEAM_CONTINUE
 } from "../src/processApplication/properties"
 import {
   ACTION_IDENTITY, computeTimesCircledOn, create_state_machine, decorateWithEntryActions, generateTestsFromFSM,
   identity, INIT_EVENT, INIT_STATE, makeHistoryStates, NO_OUTPUT
 } from "state-transducer"
-import { mapObjIndexed } from "ramda"
+import { complement, mapObjIndexed, merge } from "ramda"
 import { applyPatch } from "json-patch-es6/lib/duplex"
-import { multiplyVectorByMatrixAndAppend, multiplyVectorByMatrixAndPrepend } from "../src/helpers"
 import {
   renderAboutErrorScreen, renderAboutInitScreen, renderAboutScreen, renderAppliedScreen, renderINITscreen,
   renderInvalidTeamDetailJoinScreen, renderInvalidTeamDetailUnjoinScreen, renderQuestionErrorScreen,
   renderQuestionScreen, renderReviewScreen, renderTeamDetailBackToUnjoinScreen, renderTeamDetailJoinScreen,
   renderTeamScreen
 } from "./snapshots"
+import {
+  hasJoinedAtLeastOneTeam, isTeamJoined, isTeamJoinedAndFormInvalid, isTeamNotJoinedAndFormInvalid,
+  isTeamNotJoinedAndFormValid
+} from "../src/processApplication/fsmEvents"
+import { initializeModel } from "../src/processApplication/modelUpdates"
+import { fakeOpportunityKey, fakeProjectKey, fakeUserKey } from "../fixtures"
+import { ALL_PATHS_LIMITED_TO_N_LOOPS } from "graph-adt"
+import {
+  appInABOUTandInvalidForm, appInABOUTandValidFormAndNotReviewed, appInABOUTandValidFormAndReviewed,
+  appInQUESTIONandInvalidForm, appInQUESTIONandValidFormAndNotReviewed, appInQUESTIONandValidFormAndReviewed,
+  appInTeamDetailInvalidForm, appInTeamDetailValidForm, appSavedInQuestionState, appSavedInReviewState,
+  appSavedInTeamsStateWithTeam1Joined, appUnsavedWithNoData, clickedOnBackInvalid, clickedOnSkipTeamInvalid,
+  clickedOnSkipTeamValid, clickedOnTeam, inputSequencesFixture, OP_KEY, USER_KEY
+} from './fixtures'
 
 const $ = Rx.Observable;
 
@@ -39,361 +53,9 @@ function applyJSONpatch(model, modelUpdateOperations) {
   return applyPatch(model, modelUpdateOperations, false, false).newDocument;
 }
 
-//
 const default_settings = {
   updateState: applyJSONpatch,
 };
-
-// Fixtures
-const USER_KEY = 'user';
-const OP_KEY = 'opportunity';
-const USER = {
-  displayName: 'Joe',
-  email: 'joe@gmail.com',
-  phoneNumber: '+1-23421534'
-};
-const OPPORTUNITY = { description: 'if you only had one shot', question: 'would you catch it?' };
-const TEAMS = [
-  {
-    "teamKey": "-KFVqOyjPpR4pdgK-0Wr",
-    "authorProfileKey": "-KEMTVUivQTtyS8eYqKg",
-    "description": "Be one of the first faces people see and direct them their parking spot. Enjoy the many perks of this highly social position. ",
-    "name": "Parking",
-    "question": "Have you worked parking for any other festivals? Which ones?",
-    "project": {
-      "description": "Gather to co create a conscience experience at Cosmic Alignment. Our collective minds, bodies and souls can make this year the best yet!",
-      "name": "Cosmic Alignment",
-      "ownerProfileKey": "-KEMTVUivQTtyS8eYqKg"
-    },
-  },
-  {
-    "teamKey": "KFVssLvEPsDJUofy1Yd",
-    "authorProfileKey": "-KEMTVUivQTtyS8eYqKg",
-    "description": "The gateway to Cosmic Alignment! Here, you'll be selling GA tickets, banding guests and checking in artists. This job requires organization and a friendly face.",
-    "name": "Box Office",
-    "question": "Which festivals have you worked Box Office before?",
-    "project": {
-      "description": "Gather to co create a conscience experience at Cosmic Alignment. Our collective minds, bodies and souls can make this year the best yet!",
-      "name": "Cosmic Alignment",
-      "ownerProfileKey": "-KEMTVUivQTtyS8eYqKg"
-    },
-  }
-];
-const PROJECT = { name: 'Beyond and further', date: '1984.09.09', location: 'right here' };
-const teamsInfo = {
-  "-KFVqOyjPpR4pdgK-0Wr": {
-    description: "Be one of the first faces people see and direct them their parking spot. Enjoy the many perks of this highly social position. ",
-    name: "Parking",
-    question: "Have you worked parking for any other festivals? Which ones?",
-    hasBeenJoined: true,
-    answer: 'Never'
-  },
-  "KFVssLvEPsDJUofy1Yd": {
-    description: "The gateway to Cosmic Alignment! Here, you'll be selling GA tickets, banding guests and checking in artists. This job requires organization and a friendly face.",
-    name: "Box Office",
-    question: "Which festivals have you worked Box Office before?",
-    hasBeenJoined: false,
-    answer: ''
-  },
-};
-const unjoinedTeamsInfo = {
-  "-KFVqOyjPpR4pdgK-0Wr": {
-    description: "Be one of the first faces people see and direct them their parking spot. Enjoy the many perks of this highly social position. ",
-    name: "Parking",
-    question: "Have you worked parking for any other festivals? Which ones?",
-    hasBeenJoined: false,
-    answer: ''
-  },
-  "KFVssLvEPsDJUofy1Yd": {
-    description: "The gateway to Cosmic Alignment! Here, you'll be selling GA tickets, banding guests and checking in artists. This job requires organization and a friendly face.",
-    name: "Box Office",
-    question: "Which festivals have you worked Box Office before?",
-    hasBeenJoined: false,
-    answer: ''
-  },
-};
-const maxResults = 700;
-let resultNumber = 0;
-// Helpers
-const noEdgeRepeats = (target, maxNumberOfTraversals) => ({
-  onResult: results => {
-    if (!(resultNumber % 10)) {
-      console.info(`Accumulated results`, JSON.stringify(results.map(result => result.controlStateSequence)));
-    }
-    resultNumber++
-    console.info(`Number of results so far :`, resultNumber);
-  },
-  strategy: {
-    isTraversableEdge: (edge, graph, pathTraversalState, graphTraversalState) => {
-
-      return computeTimesCircledOn(pathTraversalState.path, edge) < (maxNumberOfTraversals || 1) && resultNumber < maxResults
-    },
-    isGoalReached: (edge, graph, pathTraversalState, graphTraversalState) => {
-      const { getEdgeTarget, getEdgeOrigin } = graph;
-      const lastPathVertex = getEdgeTarget(edge);
-      // Edge case : accounting for initial vertex
-      const vertexOrigin = getEdgeOrigin(edge);
-
-      const isGoalReached = vertexOrigin ? lastPathVertex === target : false;
-      return isGoalReached
-    },
-  }
-});
-
-function makeAppFixture(userApplication) {
-  return {
-    user: USER,
-    opportunity: OPPORTUNITY,
-    teams: TEAMS,
-    project: PROJECT,
-    errorMessage: null,
-    validationMessages: {},
-    userApplication,
-
-  }
-}
-
-function makeUserApplication({ superPower, phone, preferredName, zipCode, legalName, birthday, answer, teamsInfo, step, hasApplied, hasReviewedApplication, latestTeamIndex }) {
-  return {
-    userKey: USER_KEY,
-    opportunityKey: OP_KEY,
-    about: {
-      aboutYou: { superPower },
-      personal: { phone, preferredName, zipCode, legalName, birthday }
-    },
-    questions: { answer },
-    teams: teamsInfo,
-    progress: {
-      step,
-      hasApplied,
-      hasReviewedApplication,
-      latestTeamIndex
-    }
-  }
-}
-
-QUnit.module("Testing demo app", {});
-
-const appUnsavedWithNoData = makeAppFixture(makeUserApplication({
-  superPower: '',
-  phone: '',
-  preferredName: '',
-  zipCode: '',
-  legalName: '',
-  birthday: '',
-  answer: '',
-  teamsInfo: unjoinedTeamsInfo,
-  step: STEP_ABOUT,
-  hasApplied: false,
-  hasReviewedApplication: false,
-  latestTeamIndex: 0
-}));
-const appInABOUTandInvalidForm = {
-  formData: {
-    superPower: '',
-    phone: '',
-    preferredName: '',
-    zipCode: '',
-    legalName: '',
-    birthday: '',
-  },
-  validationData: {
-    'superPower': MANDATORY_PLEASE_FILL_IN_VALID_ERROR,
-    'legalName': MANDATORY_PLEASE_FILL_IN_VALID_ERROR,
-    'preferredName': MANDATORY_PLEASE_FILL_IN_VALID_ERROR,
-    'phone': MIN_LENGTH_VALID_ERROR,
-    'birthday': MIN_LENGTH_VALID_ERROR,
-    'zipCode': MIN_LENGTH_VALID_ERROR
-  }
-}
-const appInABOUTandValidFormAndNotReviewed = {
-  formData: {
-    superPower: 'fly',
-    phone: '1234',
-    preferredName: 'Otadaki',
-    zipCode: '1231',
-    legalName: 'Kujio',
-    birthday: '09.09.09',
-  },
-  validationData: {
-    'superPower': true,
-    'legalName': true,
-    'preferredName': true,
-    'phone': true,
-    'birthday': true,
-    'zipCode': true
-  }
-};
-const appInQUESTIONandInvalidForm = {
-  formData: {
-    'answer': '',
-  },
-  validationData: {
-    'answer': MANDATORY_PLEASE_FILL_IN_VALID_ERROR
-  }
-};
-const appInQUESTIONandValidFormAndNotReviewed = {
-  formData: {
-    'answer': 'That is what I like',
-  },
-  validationData: {
-    'answer': true
-  }
-};
-const appInTeamDetailInvalidForm = {
-  formData: {
-    'answer': ''
-  },
-  validationData: {
-    'answer': MANDATORY_PLEASE_FILL_IN_VALID_ERROR
-  }
-};
-const teamAnswer = teamIndex => `Team ${teamIndex} answer`;
-const skippedTeamAnswer = teamIndex => ({
-  formData: {
-    answer: `Team ${teamIndex} skipped`
-  }
-});
-const skippedTeamAnswerInvalid = teamIndex => ({
-  formData: {
-    answer: ``
-  }
-});
-
-const appInTeamDetailValidForm = [
-  {
-    formData: {
-      'answer': teamAnswer(0)
-    },
-    validationData: {
-      'answer': true
-    }
-  },
-  {
-    formData: {
-      'answer': teamAnswer(1)
-    },
-    validationData: {
-      'answer': true
-    }
-  }
-];
-const clickedOnSkipTeam = {
-  formData: {
-    'answer': 'skipped'
-  },
-  validationData: {
-    'answer': true
-  }
-};
-const clickedOnSkipTeamInvalid = {
-  formData: {
-    'answer': ''
-  },
-  validationData: {
-    'answer': MANDATORY_PLEASE_FILL_IN_VALID_ERROR
-  }
-};
-const clickedOnBackInvalid = {
-  formData: {
-    'answer': ''
-  },
-  validationData: {
-    'answer': MANDATORY_PLEASE_FILL_IN_VALID_ERROR
-  }
-};
-const clickedOnBackValid = answer => ({
-  formData: {
-    'answer': answer
-  },
-  validationData: {
-    'answer': true
-  }
-});
-const appInTeamDetailBackValidForm = answer => ({
-  'answer': answer
-});
-const appInABOUTandValidFormAndReviewed = {
-  formData: {
-    superPower: 'refly', // That is simulating the review
-    phone: appInABOUTandValidFormAndNotReviewed.formData.phone,
-    preferredName: appInABOUTandValidFormAndNotReviewed.formData.preferredName,
-    zipCode: appInABOUTandValidFormAndNotReviewed.formData.zipCode,
-    legalName: appInABOUTandValidFormAndNotReviewed.formData.legalName,
-    birthday: appInABOUTandValidFormAndNotReviewed.formData.birthday
-  },
-  validationData: appInABOUTandValidFormAndNotReviewed.validationData
-};
-const appInQUESTIONandValidFormAndReviewed = {
-  formData: {
-    'answer': 'That is what I like so much',
-  },
-  validationData: {
-    'answer': true
-  }
-};
-const clickedOnTeam = 0; // that is the index on the team clicked on
-const appSavedInTeamsStateWithTeam1Joined = makeAppFixture(makeUserApplication({
-    superPower: 'fly',
-    phone: '1234',
-    preferredName: 'Otadaki',
-    zipCode: '1231',
-    legalName: 'Kujio',
-    birthday: '09.09.09',
-    answer: 'That is what I like',
-    teamsInfo,
-    step: STATE_TEAMS,
-    hasApplied: false,
-    hasReviewedApplication: true,
-    latestTeamIndex: 0
-  }
-));
-const appSavedInAboutState = makeAppFixture(makeUserApplication({
-    superPower: 'fly',
-    phone: '1234',
-    preferredName: 'Otadaki',
-    zipCode: '1231',
-    legalName: 'Kujio',
-    birthday: '09.09.09',
-    answer: '',
-    teamsInfo: teamsInfo,
-    step: STATE_ABOUT,
-    hasApplied: false,
-    hasReviewedApplication: false,
-    latestTeamIndex: 0
-  }
-));
-const appSavedInQuestionState = makeAppFixture(makeUserApplication({
-    superPower: 'fly',
-    phone: '1234',
-    preferredName: 'Otadaki',
-    zipCode: '1231',
-    legalName: 'Kujio',
-    birthday: '09.09.09',
-    answer: 'That is what I like',
-    teamsInfo: teamsInfo,
-    step: STATE_QUESTION,
-    hasApplied: false,
-    // NOTE : if I have team subscription like I do with `teamInfo` then necessarily I went through the review screen
-    hasReviewedApplication: true,
-    latestTeamIndex: 0
-  }
-));
-const appSavedInReviewState = makeAppFixture(makeUserApplication({
-    superPower: 'fly',
-    phone: '1234',
-    preferredName: 'Otadaki',
-    zipCode: '1231',
-    legalName: 'Kujio',
-    birthday: '09.09.09',
-    answer: 'That is what I like',
-    teamsInfo,
-    step: STEP_REVIEW,
-    hasApplied: false,
-    hasReviewedApplication: true,
-    latestTeamIndex: 0
-  }
-));
 
 const updateAction = ({ step, superPower, hasApplied, hasReviewedApplication, hasBeenJoined, answers, question, latestTeamIndex }) => ({
   "domainAction": {
@@ -443,9 +105,16 @@ const updateAction = ({ step, superPower, hasApplied, hasReviewedApplication, ha
   }
 });
 
+function getTeamIndex(extS) {
+  const { userApplication: { progress: { latestTeamIndex } } } = extS;
+  return latestTeamIndex
+}
+
 const INIT_I = { [INIT_EVENT]: {} };
 
-QUnit.test(`INIT -> About -invalid-> About -> Question -invalid-> Question -> Teams -click-0-> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -back-> Teams -> Review -> Question -> Review -> About -> Review -> State_Applied`, function exec_test(assert) {
+QUnit.module("Testing demo app", {});
+
+QUnit.skip(`INIT -> About -invalid-> About -> Question -invalid-> Question -> Teams -click-0-> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -back-> Teams -> Review -> Question -> Review -> About -> Review -> State_Applied`, function exec_test(assert) {
   const inputSequence = [
     INIT_I,
     { [FETCH_EV]: appUnsavedWithNoData },
@@ -591,8 +260,7 @@ QUnit.test(`INIT -> About -invalid-> About -> Question -invalid-> Question -> Te
   });
 });
 
-// TODO :?
-QUnit.test("Reviewed application saved in `Question` state : INIT -> Question -> Review -> Applied", function exec_test(assert) {
+QUnit.skip("Reviewed application saved in `Question` state : INIT -> Question -> Review -> Applied", function exec_test(assert) {
   // ["nok","INIT_S","Question","Review","State_Applied"],
   const inputSequence = [
     INIT_I,
@@ -613,14 +281,14 @@ QUnit.test("Reviewed application saved in `Question` state : INIT -> Question ->
 
   assert.deepEqual(HTMLedResults, [
     [renderINITscreen],
-    [renderQuestionScreen({answer: `That is what I like`})],
+    [renderQuestionScreen({ answer: `That is what I like` })],
     [{
       DOM: renderReviewScreen({ hasBeenJoined: [true, false] }).DOM, "domainAction":
       updateAction({
         hasApplied: false,
         hasReviewedApplication: true,
         hasBeenJoined: [true, false],
-        question : `That is what I like`,
+        question: `That is what I like`,
         answers: [appSavedInQuestionState.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
       }).domainAction
     }],
@@ -628,7 +296,7 @@ QUnit.test("Reviewed application saved in `Question` state : INIT -> Question ->
       DOM: renderAppliedScreen.DOM,
       "domainAction": updateAction({
         hasApplied: true,
-        question : `That is what I like`,
+        question: `That is what I like`,
         hasReviewedApplication: true,
         hasBeenJoined: [true, false],
         answers: [appSavedInQuestionState.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
@@ -636,7 +304,7 @@ QUnit.test("Reviewed application saved in `Question` state : INIT -> Question ->
     }]], `["nok","INIT_S","Question","Review","State_Applied"]`)
 });
 
-QUnit.test("Reviewed application saved in `Teams` state : INIT -> Teams -> Review -> Applied", function exec_test(assert) {
+QUnit.skip("Reviewed application saved in `Teams` state : INIT -> Teams -> Review -> Applied", function exec_test(assert) {
   // ["nok","INIT_S","Teams","State_Applied"],
   const inputSequence = [
     INIT_I,
@@ -662,7 +330,7 @@ QUnit.test("Reviewed application saved in `Teams` state : INIT -> Teams -> Revie
       DOM: renderReviewScreen({ hasBeenJoined: [true, false] }).DOM, "domainAction":
       updateAction({
         hasApplied: false,
-        question : `That is what I like`,
+        question: `That is what I like`,
         hasReviewedApplication: true,
         hasBeenJoined: [true, false],
         answers: [appSavedInTeamsStateWithTeam1Joined.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
@@ -672,7 +340,7 @@ QUnit.test("Reviewed application saved in `Teams` state : INIT -> Teams -> Revie
       DOM: renderAppliedScreen.DOM,
       "domainAction": updateAction({
         hasApplied: true,
-        question : `That is what I like`,
+        question: `That is what I like`,
         hasReviewedApplication: true,
         hasBeenJoined: [true, false],
         answers: [appSavedInTeamsStateWithTeam1Joined.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
@@ -680,7 +348,7 @@ QUnit.test("Reviewed application saved in `Teams` state : INIT -> Teams -> Revie
     }]], `["nok","INIT_S","Teams","State_Applied"]`)
 });
 
-QUnit.test("Reviewed application saved in `Review` state : INIT -> Review -> Applied", function exec_test(assert) {
+QUnit.skip("Reviewed application saved in `Review` state : INIT -> Review -> Applied", function exec_test(assert) {
   // ["nok","INIT_S","Review","Teams","State_Applied"]
   const inputSequence = [
     INIT_I,
@@ -705,7 +373,7 @@ QUnit.test("Reviewed application saved in `Review` state : INIT -> Review -> App
       DOM: renderAppliedScreen.DOM,
       "domainAction": updateAction({
         hasApplied: true,
-        question : `That is what I like`,
+        question: `That is what I like`,
         hasReviewedApplication: true,
         hasBeenJoined: [true, false],
         answers: [appSavedInReviewState.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"].answer, ``]
@@ -713,531 +381,300 @@ QUnit.test("Reviewed application saved in `Review` state : INIT -> Review -> App
     }]], `["nok","INIT_S","Review","Teams","State_Applied"]`)
 });
 
-// old for reference
-QUnit.skip("Teams subscription permutations (N = testing events which do not progress the machine, Y = sequence up" +
-  " to the final state)", function exec_test(assert) {
-  const clickedOnSkipTeam = teamIndex => ({
-    formData: {
-      'answer': `Team ${teamIndex} skipped`
-    }
-  });
-  const joinInvalid = { [JOIN_OR_UNJOIN_TEAM_CLICKED]: appInTeamDetailInvalidForm };
-  const joinValid = { [JOIN_OR_UNJOIN_TEAM_CLICKED]: teamIndex => appInTeamDetailValidForm[teamIndex] };
-  const skip = { [SKIP_TEAM_CLICKED]: clickedOnSkipTeam };
-  const back = { [BACK_TEAM_CLICKED]: answer => appInTeamDetailBackValidForm(answer) };
-  const apply = { [APPLICATION_COMPLETED]: {} };
-  const teamContinue = { [TEAM_CONTINUE]: {} };
-
-  const inputSequencePrefixes = {
-    reviewedApp: [
-      INIT_I,
-      { [FETCH_EV]: appSavedInTeamsStateWithTeam1Joined },
-      { [TEAM_CLICKED]: 0 },
-    ],
-    emptyApp: [
-      INIT_I,
-      { [FETCH_EV]: appUnsavedWithNoData },
-      { [ABOUT_CONTINUE]: appInABOUTandValidFormAndNotReviewed },
-      { [QUESTION_CONTINUE]: appInQUESTIONandValidFormAndNotReviewed },
-      { [TEAM_CLICKED]: 0 },
+QUnit.test("Teams subscription permutations", function exec_test(assert) {
+  // NOTE : We are testing here input sequences which are allowed. A more exhaustive testing would also test input
+  // sequences which are not allowed result in a NO_OUTPUT of the state machine
+  // A. Generate permutations for teams by creating a section of the original state machine
+  const partialFsmDef = {
+    initialExtendedState: appSavedInTeamsStateWithTeam1Joined,
+    states: fsm.states,
+    events: fsm.events,
+    transitions: [{ from: INIT_STATE, event: INIT_EVENT, to: STATE_TEAMS, action: initializeModel }]
+      .concat(fsm.transitions.slice(1)),
+  };
+  const genPartialFsmDef = {
+    transitions: [
+      {
+        from: INIT_STATE,
+        event: INIT_EVENT,
+        to: STATE_TEAMS,
+        gen: extS => ({ input: appSavedInTeamsStateWithTeam1Joined, hasGeneratedInput: true })
+      },
+      {
+        from: STATE_TEAMS, event: TEAM_CLICKED, to: STATE_TEAM_DETAIL, gen: function genTEAMStoTEAMDETAIL(extS) {
+          return { input: clickedOnTeam, hasGeneratedInput: true }
+        }
+      },
+      {
+        from: STATE_TEAM_DETAIL, event: SKIP_TEAM_CLICKED, guards: [
+          {
+            predicate: complement(isTeamJoinedAndFormInvalid),
+            to: STATE_TEAM_DETAIL,
+            gen: function genTEAMStoTEAMDETAILSKIPvalid(extS) {
+              return {
+                input: isTeamJoined(extS, null) ? clickedOnSkipTeamValid : clickedOnSkipTeamInvalid,
+                hasGeneratedInput: true
+              }
+            }
+          },
+          {
+            predicate: isTeamJoinedAndFormInvalid,
+            to: STATE_TEAM_DETAIL,
+            gen: function genTEAMStoTEAMDETAILSKIPinvalid(extS) {
+              return { input: clickedOnSkipTeamInvalid, hasGeneratedInput: isTeamJoined(extS, null) }
+            }
+          },
+        ]
+      },
+      {
+        from: STATE_TEAM_DETAIL,
+        event: JOIN_OR_UNJOIN_TEAM_CLICKED,
+        guards: [
+          {
+            predicate: isTeamJoined, to: STATE_TEAM_DETAIL, gen: function genTEAMStoTEAMDETAILunjoin(extS) {
+              return { input: appInTeamDetailInvalidForm, hasGeneratedInput: isTeamJoined(extS, null) }
+            }
+          },
+          {
+            predicate: isTeamNotJoinedAndFormValid,
+            to: STATE_TEAM_DETAIL,
+            gen: function genTEAMStoTEAMDETAILjoin(extS) {
+              return {
+                input: appInTeamDetailValidForm[getTeamIndex(extS)],
+                hasGeneratedInput: !isTeamJoined(extS, null)
+              }
+            }
+          },
+          {
+            predicate: isTeamNotJoinedAndFormInvalid,
+            to: STATE_TEAM_DETAIL,
+            gen: function genTEAMStoTEAMDETAILjoinInvalid(extS) {
+              return { input: appInTeamDetailInvalidForm, hasGeneratedInput: !isTeamJoined(extS, null) }
+            }
+          }
+        ]
+      },
+      {
+        from: STATE_TEAM_DETAIL,
+        event: BACK_TEAM_CLICKED,
+        guards: [
+          {
+            predicate: isTeamJoinedAndFormInvalid,
+            to: STATE_TEAM_DETAIL,
+            gen: function genTEAMStoTEAMDETAILbackInvalid(extS) {
+              return { input: appInTeamDetailInvalidForm, hasGeneratedInput: isTeamJoined(extS, null) }
+            }
+          },
+          {
+            predicate: complement(isTeamJoinedAndFormInvalid),
+            to: STATE_TEAMS,
+            gen: function genTEAMStoTEAMDETAILbackValid(extS) {
+              return {
+                input: isTeamJoined(extS, null) ? clickedOnSkipTeamValid : clickedOnSkipTeamInvalid,
+                hasGeneratedInput: true
+              }
+            }
+          },
+        ],
+      },
+      {
+        from: STATE_TEAMS,
+        event: TEAM_CONTINUE,
+        guards: [
+          {
+            predicate: hasJoinedAtLeastOneTeam,
+            to: STATE_REVIEW,
+            gen: extS => ({ input: {}, hasGeneratedInput: hasJoinedAtLeastOneTeam(extS) })
+          },
+          {
+            predicate: complement(hasJoinedAtLeastOneTeam),
+            to: STATE_TEAMS,
+            gen: extS => ({ input: {}, hasGeneratedInput: !hasJoinedAtLeastOneTeam(extS) })
+          }
+        ]
+      },
     ]
   };
-  const permutationsGenerator = [
-    // 3
-    [joinInvalid, joinValid, skip], // N
-    [joinInvalid, skip, joinValid], // Y
-    [joinValid, joinInvalid, skip], // N
-    [joinValid, skip, joinInvalid], // N
-    [skip, joinInvalid, joinValid], // Y
-    [skip, joinValid, joinInvalid], // Y
-    // 2
-    [joinValid, skip], // N
-    [skip, joinValid], // Y
-    [joinInvalid, joinValid], // N
-    [joinValid, joinInvalid], // N
-    [joinInvalid, skip], // Y
-    [skip, joinInvalid], // Y
-    // 1
-    [joinValid], // N
-    [joinInvalid], // Y
-    [skip], // Y
-    // 0
-    [] // Y
-  ];
-  const suffixGenerator = [back, teamContinue, apply];
-  const teamInputSequenceGenerator = multiplyVectorByMatrixAndPrepend(suffixGenerator, permutationsGenerator);
-  const generateTeamInputSequence = (acc, input) => {
-    let { latestTeamIndex, latestAnswer, sequence } = acc;
-    if (input === joinInvalid) {
-      sequence = sequence.concat([input]);
-      latestAnswer[latestTeamIndex] = '';
-    }
-    else if (input === joinValid) {
-      sequence = sequence.concat({ [JOIN_OR_UNJOIN_TEAM_CLICKED]: input[JOIN_OR_UNJOIN_TEAM_CLICKED](latestTeamIndex) });
-      latestAnswer[latestTeamIndex] = teamAnswer(latestTeamIndex);
-      latestTeamIndex = (latestTeamIndex + 1) % 2;
-    }
-    else if (input === skip) {
-      sequence = sequence.concat({ [SKIP_TEAM_CLICKED]: skippedTeamAnswer(latestTeamIndex) });
-      latestAnswer[latestTeamIndex] = skippedTeamAnswer(latestTeamIndex).formData.answer;
-      latestTeamIndex = (latestTeamIndex + 1) % 2;
-    }
-    else if (input === back) {
-      sequence = sequence.concat({ [BACK_TEAM_CLICKED]: input[BACK_TEAM_CLICKED](latestAnswer[latestTeamIndex]) });
-    }
-    else if (input === teamContinue) {
-      sequence = sequence.concat([input]);
-    }
-    else if (input === apply) {
-      sequence = sequence.concat([input]);
-    }
-    else {
-      throw `unknown input!`
-    }
-
-    return { latestTeamIndex, latestAnswer, sequence };
-  };
-  const arrTeamInputSequencesStruct = teamInputSequenceGenerator.map(permutation => {
-    return permutation.reduce(generateTeamInputSequence,
-      { latestTeamIndex: 0, latestAnswer: [`Team 0 answer`, ``], sequence: [] })
+  const generators = genPartialFsmDef.transitions;
+  const strategy = ALL_PATHS_LIMITED_TO_N_LOOPS({ maxNumberOfTraversals: 1, targetVertex: STATE_REVIEW });
+  let counter = 0;
+  const settings = merge(default_settings, {
+    strategy,
+    onResult: result => {
+      counter++;
+      console.info('result', result)
+    },
+    userKey: fakeUserKey,
+    opportunityKey: fakeOpportunityKey,
+    projectKey: fakeProjectKey,
   });
-  const arrTeamInputSequences = arrTeamInputSequencesStruct.map(sequenceStruct => sequenceStruct.sequence);
-  const reviewedAppTestSequences = multiplyVectorByMatrixAndAppend(
-    inputSequencePrefixes.reviewedApp,
-    arrTeamInputSequences
-  );
+  // const teamsInputSequence = generateTestsFromFSM(partialFsmDef, generators, settings)
+  //   .map(({ inputSequence }) => inputSequence.slice(1))
 
-  const arrResults = reviewedAppTestSequences.map(sequence => {
-    const machine = create_state_machine(fsm, default_settings);
-    return sequence.map(machine.yield)
-  });
-  const HTMLedResults = arrResults.map(results => results.map(outputSequence => {
-    if (outputSequence == null) return null
-    return outputSequence.map(mapObjIndexed((value, sinkName) => {
-      if (sinkName === 'DOM') return convertVNodesToHTML(value)
-      else return value
-    }))
-  }));
-
-  // compute output sequences
-  const renderValidTeamDetailScreen = (answer, isJoined) => [{
-    "DOM": `<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"active step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><div class=\"c-application__team_detail-back ui fluid negative button\" tabindex=\"0\">Back to teams</div><div class=\"ui divided selection list\"><a class=\"item\"><div class=\"ui horizontal label\">Parking</div>Be one of the first faces people see and direct them their parking spot. Enjoy the many perks of this highly social position. </a></div><form class=\"ui form\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Have you worked parking for any other festivals? Which ones?</div><p>Team lead&#39;s name/role</p></div></div><div class=\"field\"><textarea class=\"c-textfield__input--team_detail_answer\" name=\"userapp[organizer-question]\" placeholder=\"Please enter your answer here\" value=${answer ? '"' + answer + '"' : '"Never"'} required=\"false\"></textarea><div class=\"c-textfield__error c-textfield__error--td\"></div></div></form></div><div class=\"ui fluid buttons\"><button class=\"c-btn c-btn--quiet c-application__submit--team_detail_skip ui button\">Skip this team</button><div class=\"or\"></div><button class=\"c-application__submit--team_detail_join ui positive button\">${isJoined ? 'Unjoin team' : 'Join team'}</button></div><div class=\"c-application__error\"></div></div>`
-  }, {
-    "DOM": "<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"active step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><div class=\"c-application__team_detail-back ui fluid negative button\" tabindex=\"0\">Back to teams</div><div class=\"ui divided selection list\"><a class=\"item\"><div class=\"ui horizontal label\">Box Office</div>The gateway to Cosmic Alignment! Here, you&#39;ll be selling GA tickets, banding guests and checking in artists. This job requires organization and a friendly face.</a></div><form class=\"ui form\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Which festivals have you worked Box Office before?</div><p>Team lead&#39;s name/role</p></div></div><div class=\"field\"><textarea class=\"c-textfield__input--team_detail_answer\" name=\"userapp[organizer-question]\" placeholder=\"Please enter your answer here\" required=\"false\"></textarea><div class=\"c-textfield__error c-textfield__error--td\"></div></div></form></div><div class=\"ui fluid buttons\"><button class=\"c-btn c-btn--quiet c-application__submit--team_detail_skip ui button\">Skip this team</button><div class=\"or\"></div><button class=\"c-application__submit--team_detail_join ui positive button\">Join team</button></div><div class=\"c-application__error\"></div></div>"
-  }];
-  const renderInvalidTeamDetailScreen = (hasBeenJoined) => [{
-    "DOM": `<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"active step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><div class=\"c-application__team_detail-back ui fluid negative button\" tabindex=\"0\">Back to teams</div><div class=\"ui divided selection list\"><a class=\"item\"><div class=\"ui horizontal label\">Parking</div>Be one of the first faces people see and direct them their parking spot. Enjoy the many perks of this highly social position. </a></div><form class=\"ui form\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Have you worked parking for any other festivals? Which ones?</div><p>Team lead&#39;s name/role</p></div></div><div class=\"field\"><textarea class=\"c-textfield__input--team_detail_answer\" name=\"userapp[organizer-question]\" placeholder=\"Please enter your answer here\" required=\"false\"></textarea><div class=\"c-textfield__error c-textfield__error--td\">Mandatory field : please fill in !</div></div></form></div><div class=\"ui fluid buttons\"><button class=\"c-btn c-btn--quiet c-application__submit--team_detail_skip ui button\">Skip this team</button><div class=\"or\"></div><button class=\"c-application__submit--team_detail_join ui positive button\">${hasBeenJoined ? 'Unjoin team' : 'Join team'}</button></div><div class=\"c-application__error\"></div></div>`
-  }, {
-    "DOM": `<div id=\"page\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Beyond and further</div><p>1984.09.09</p></div></div><div class=\"ui description\"><p>Complete your application for Beyond and further</p></div><div class=\"ui steps\"><a class=\"step\"><div class=\"content\">About</div></a><a class=\"step\"><div class=\"content\">Question</div></a><a class=\"active step\"><div class=\"content\">Teams</div></a><a class=\"step\"><div class=\"content\">Review</div></a></div><div class=\"ui bottom attached segment\"><div class=\"c-application__team_detail-back ui fluid negative button\" tabindex=\"0\">Back to teams</div><div class=\"ui divided selection list\"><a class=\"item\"><div class=\"ui horizontal label\">Box Office</div>The gateway to Cosmic Alignment! Here, you&#39;ll be selling GA tickets, banding guests and checking in artists. This job requires organization and a friendly face.</a></div><form class=\"ui form\"><div class=\"ui icon message\"><i class=\"inbox icon\"></i><div class=\"content\"><div class=\"header\">Which festivals have you worked Box Office before?</div><p>Team lead&#39;s name/role</p></div></div><div class=\"field\"><textarea class=\"c-textfield__input--team_detail_answer\" name=\"userapp[organizer-question]\" placeholder=\"Please enter your answer here\" required=\"false\"></textarea><div class=\"c-textfield__error c-textfield__error--td\">Mandatory field : please fill in !</div></div></form></div><div class=\"ui fluid buttons\"><button class=\"c-btn c-btn--quiet c-application__submit--team_detail_skip ui button\">Skip this team</button><div class=\"or\"></div><button class=\"c-application__submit--team_detail_join ui positive button\">${hasBeenJoined ? 'Unjoin team' : 'Join team'}</button></div><div class=\"c-application__error\"></div></div>`
-  }];
-
-  const outputs = [
-    // [joinInvalid, joinValid, skip], // N
-    [[renderINITscreen], [renderTeamScreen([true, false])], [renderValidTeamDetailScreen(null, true)[0]], [renderInvalidTeamDetailScreen(true)[0]], [renderValidTeamDetailScreen()[1]], [renderValidTeamDetailScreen(teamAnswer(0), false)[0]], [renderTeamScreen([false, false])], [renderTeamScreen([false, false])], null],
-    // [joinInvalid, skip, joinValid ], // Y
-    [[renderINITscreen], [renderTeamScreen([true, false])], [renderValidTeamDetailScreen(null, true)[0]], [renderInvalidTeamDetailScreen(true)[0]], [renderValidTeamDetailScreen()[1]], [renderValidTeamDetailScreen(skippedTeamAnswer(0).formData.answer, true)[0]], [renderTeamScreen([true, true])], [{
-      DOM: renderReviewScreen({ hasBeenJoined: [true, true] }).DOM, "domainAction":
-      updateAction({
-        hasApplied: false,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, true],
-        answers: [`Team 0 skipped`, `Team 1 answer`]
-      }).domainAction
-    }], [{
-      DOM: renderAppliedScreen.DOM,
-      "domainAction": updateAction({
-        hasApplied: true,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, true],
-        answers: [`Team 0 skipped`, `Team 1 answer`]
-      }).domainAction
-    }]],
-    // [joinValid, joinInvalid, skip], // N
-    [[renderINITscreen], [renderTeamScreen([true, false])], [renderValidTeamDetailScreen(null, true)[0]], [renderValidTeamDetailScreen()[1]], [renderInvalidTeamDetailScreen(false)[1]], [renderValidTeamDetailScreen(teamAnswer(0), false)[0]], [renderTeamScreen([false, false])], [renderTeamScreen([false, false])], null],
-    // [joinValid, skip, joinInvalid], // N
-    [[renderINITscreen], [renderTeamScreen([true, false])], [renderValidTeamDetailScreen(null, true)[0]], [renderValidTeamDetailScreen()[1]], [renderValidTeamDetailScreen(teamAnswer(0), false)[0]], [renderInvalidTeamDetailScreen(false)[0]], [renderTeamScreen([false, false])], [renderTeamScreen([false, false])], null],
-    // [skip, joinInvalid, joinValid], // Y
-    [[renderINITscreen], [renderTeamScreen([true, false])], [renderValidTeamDetailScreen(null, true)[0]], [renderValidTeamDetailScreen()[1]], [renderInvalidTeamDetailScreen(false)[1]], [renderValidTeamDetailScreen(skippedTeamAnswer(0).formData.answer, true)[0]], [renderTeamScreen([true, true])], [{
-      DOM: renderReviewScreen({ hasBeenJoined: [true, true] }).DOM, "domainAction":
-      updateAction({
-        hasApplied: false,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, true],
-        answers: [`Team 0 skipped`, `Team 1 answer`]
-      }).domainAction
-    }], [{
-      DOM: renderAppliedScreen.DOM,
-      "domainAction": updateAction({
-        hasApplied: true,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, true],
-        answers: [`Team 0 skipped`, `Team 1 answer`]
-      }).domainAction
-    }]],
-    // [skip, joinValid, joinInvalid], // Y // TODO : actually no, joinInvalid would be unjoin and that's ok if
-    // answer is empty
-    [[renderINITscreen], [renderTeamScreen([true, false])], [renderValidTeamDetailScreen(null, true)[0]], [renderValidTeamDetailScreen()[1]], [renderValidTeamDetailScreen(skippedTeamAnswer(0).formData.answer, true)[0]], [renderInvalidTeamDetailScreen(true)[0]], [renderTeamScreen([true, true])], [{
-      DOM: renderReviewScreen({ hasBeenJoined: [true, true] }).DOM, "domainAction":
-      updateAction({
-        hasApplied: false,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, true],
-        answers: [``, `Team 1 answer`]
-      }).domainAction
-    }], [{
-      DOM: renderAppliedScreen.DOM,
-      "domainAction": updateAction({
-        hasApplied: true,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, true],
-        answers: [``, `Team 1 answer`]
-      }).domainAction
-    }]],
-    // // 2
-    // [joinValid, skip], // N
-    [[renderINITscreen], [renderTeamScreen([true, false])], [renderValidTeamDetailScreen(null, true)[0]], [renderValidTeamDetailScreen()[1]], [renderValidTeamDetailScreen(teamAnswer(0), false)[0]], [renderTeamScreen([false, false])], [renderTeamScreen([false, false])], null],
-    // [skip, joinValid], // Y
-    [[renderINITscreen], [renderTeamScreen([true, false])], [renderValidTeamDetailScreen(null, true)[0]], [renderValidTeamDetailScreen()[1]], [renderValidTeamDetailScreen(skippedTeamAnswer(0).formData.answer, true)[0]], [renderTeamScreen([true, true])], [{
-      DOM: renderReviewScreen({ hasBeenJoined: [true, true] }).DOM, "domainAction":
-      updateAction({
-        hasApplied: false,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, true],
-        answers: [`Team 0 skipped`, `Team 1 answer`]
-      }).domainAction
-    }], [{
-      DOM: renderAppliedScreen.DOM,
-      "domainAction": updateAction({
-        hasApplied: true,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, true],
-        answers: [`Team 0 skipped`, `Team 1 answer`]
-      }).domainAction
-    }]],
-    // [joinInvalid, joinValid], // N
-    [[renderINITscreen], [renderTeamScreen([true, false])], [renderValidTeamDetailScreen(null, true)[0]], [renderInvalidTeamDetailScreen(true)[0]], [renderValidTeamDetailScreen()[1]], [renderTeamScreen([false, false])], [renderTeamScreen([false, false])], null],
-    // [joinValid, joinInvalid], // N
-    [[renderINITscreen], [renderTeamScreen([true, false])], [renderValidTeamDetailScreen(null, true)[0]], [renderValidTeamDetailScreen()[1]], [renderInvalidTeamDetailScreen(false)[1]], [renderTeamScreen([false, false])], [renderTeamScreen([false, false])], null],
-    // [joinInvalid, skip], // Y
-    [[renderINITscreen], [renderTeamScreen([true, false])], [renderValidTeamDetailScreen(null, true)[0]], [renderInvalidTeamDetailScreen(true)[0]], [renderValidTeamDetailScreen()[1]], [renderTeamScreen([true, false])], [{
-      DOM: renderReviewScreen({ hasBeenJoined: [true, false] }).DOM, "domainAction":
-      updateAction({
-        hasApplied: false,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, false],
-        latestTeamIndex: 1,
-        // TODO : correct the answer : undefined
-        // TODO : correct the skip with empty answer (not detected by my tests by the way - use as example of data
-        // coverage necessity)
-        // Keep the bugs!! then do another branch with all tests passing!! but don't forget to mrge the last branch
-        // in master
-        // TODO : so here the actual output is undefined on the first update action, and no answer proprty on the
-        // second!
-        answers: [`Team 0 skipped`, ``]
-      }).domainAction
-    }], [{
-      DOM: renderAppliedScreen.DOM,
-      "domainAction": updateAction({
-        hasApplied: true,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, false],
-        latestTeamIndex: 1,
-        answers: [`Team 0 skipped`, ``]
-      }).domainAction
-    }]],
-    // [skip, joinInvalid], // Y
-    [[renderINITscreen], [renderTeamScreen([true, false])], [renderValidTeamDetailScreen(null, true)[0]], [renderValidTeamDetailScreen()[1]], [renderInvalidTeamDetailScreen(false)[1]], [renderTeamScreen([true, false])], [{
-      DOM: renderReviewScreen({ hasBeenJoined: [true, false] }).DOM, "domainAction":
-      updateAction({
-        hasApplied: false,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, false],
-        latestTeamIndex: 1,
-        answers: [`Team 0 skipped`, ``]
-      }).domainAction
-    }], [{
-      DOM: renderAppliedScreen.DOM,
-      "domainAction": updateAction({
-        hasApplied: true,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, false],
-        latestTeamIndex: 1,
-        answers: [`Team 0 skipped`, ``]
-      }).domainAction
-    }]],
-    // // 1
-    // [joinValid], // N
-    [[renderINITscreen], [renderTeamScreen([true, false])], [renderValidTeamDetailScreen(null, true)[0]], [renderValidTeamDetailScreen()[1]], [renderTeamScreen([false, false])], [renderTeamScreen([false, false])], null],
-    // [joinInvalid], // Y
-    // TODO : correct bug : maybe that happpens because of back button putting nothing ? yes
-    [[renderINITscreen], [renderTeamScreen([true, false])], [renderValidTeamDetailScreen(null, true)[0]], [renderInvalidTeamDetailScreen(true)[0]], [renderTeamScreen([true, false])], [{
-      DOM: renderReviewScreen({ hasBeenJoined: [true, false] }).DOM, "domainAction":
-      updateAction({
-        hasApplied: false,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, false],
-        latestTeamIndex: 0,
-        answers: [`Team 0 answer`, ``]
-      }).domainAction
-    }], [{
-      DOM: renderAppliedScreen.DOM,
-      "domainAction": updateAction({
-        hasApplied: true,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, false],
-        latestTeamIndex: 0,
-        answers: [`Team 0 answer`, ``]
-      }).domainAction
-    }]],
-    // [skip], // Y
-    [[renderINITscreen], [renderTeamScreen([true, false])], [renderValidTeamDetailScreen(null, true)[0]], [renderValidTeamDetailScreen()[1]], [renderTeamScreen([true, false])], [{
-      DOM: renderReviewScreen({ hasBeenJoined: [true, false] }).DOM, "domainAction":
-      updateAction({
-        hasApplied: false,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, false],
-        latestTeamIndex: 1,
-        answers: [`Team 0 skipped`, ``]
-      }).domainAction
-    }], [{
-      DOM: renderAppliedScreen.DOM,
-      "domainAction": updateAction({
-        hasApplied: true,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, false],
-        latestTeamIndex: 1,
-        answers: [`Team 0 skipped`, ``]
-      }).domainAction
-    }]],
-    // // 0
-    // [] // Y
-    [[renderINITscreen], [renderTeamScreen([true, false])], [renderValidTeamDetailScreen(null, true)[0]], [renderTeamScreen([true, false])], [{
-      DOM: renderReviewScreen({ hasBeenJoined: [true, false] }).DOM, "domainAction":
-      updateAction({
-        hasApplied: false,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, false],
-        latestTeamIndex: 0,
-        answers: [`Team 0 answer`, ``]
-      }).domainAction
-    }], [{
-      DOM: renderAppliedScreen.DOM,
-      "domainAction": updateAction({
-        hasApplied: true,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, false],
-        latestTeamIndex: 0,
-        answers: [`Team 0 answer`, ``]
-      }).domainAction
-    }]],
-  ];
-  const testDescriptions = [
-    `[joinInvalid, joinValid, skip], // N`,
-    `[joinInvalid, skip, joinValid], // Y`,
-    `[joinValid, joinInvalid, skip], // N`,
-    `[joinValid, skip, joinInvalid], // N`,
-    `[skip, joinInvalid, joinValid], // Y`,
-    `[skip, joinValid, joinInvalid], // Y`,
-    `[joinValid, skip], // N`,
-    `[skip, joinValid], // Y`,
-    `[joinInvalid, joinValid], // N`,
-    `[joinValid, joinInvalid], // N`,
-    `[joinInvalid, skip], // Y`,
-    `[skip, joinInvalid], // Y`,
-    `[joinValid], // N`,
-    `[joinInvalid], // Y`,
-    `[skip], // Y`,
-    `[] // Y`
-  ];
-  HTMLedResults.forEach((htmlResult, index) => assert.deepEqual(htmlResult, outputs[index], testDescriptions[index]))
-});
-
-QUnit.skip("Teams subscription permutations", function exec_test(assert) {
-  const clickedOnSkipTeam = teamIndex => ({
-    formData: {
-      'answer': `Team ${teamIndex} skipped`
-    }
-  });
-  const clickedOnSkipTeamInvalid = teamIndex => ({
-    formData: {
-      'answer': ``
-    }
-  });
-
-  const joinInvalid = { [JOIN_OR_UNJOIN_TEAM_CLICKED]: appInTeamDetailInvalidForm };
-  const joinValid = { [JOIN_OR_UNJOIN_TEAM_CLICKED]: teamIndex => appInTeamDetailValidForm[teamIndex] };
-  const skipValid = { [SKIP_TEAM_CLICKED]: clickedOnSkipTeam };
-  const skipInvalid = { [SKIP_TEAM_CLICKED]: clickedOnSkipTeamInvalid };
-  const back = { [BACK_TEAM_CLICKED]: answer => appInTeamDetailBackValidForm(answer) };
+  // B. Create test input sequences
   const apply = { [APPLICATION_COMPLETED]: {} };
-  const teamContinue = { [TEAM_CONTINUE]: {} };
+  const inputSequencePrefix = [
+    INIT_I,
+    { [FETCH_EV]: appSavedInTeamsStateWithTeam1Joined },
+  ];
+  const inputSequenceSuffix = [apply];
+  const inputSequences = inputSequencesFixture;
+  // const inputSequences = multiConcatRight(multiConcatLeft(inputSequencePrefix, teamsInputSequence), inputSequenceSuffix);
 
-  const inputSequencePrefixes = {
-    reviewedApp: [
-      INIT_I,
-      { [FETCH_EV]: appSavedInTeamsStateWithTeam1Joined },
-      { [TEAM_CLICKED]: 0 },
+  // C. Compute expected test output sequences (compute only last output)
+  const team0 = appSavedInTeamsStateWithTeam1Joined.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"];
+  const team1 = appSavedInTeamsStateWithTeam1Joined.userApplication.teams["KFVssLvEPsDJUofy1Yd"];
+  // NOTE : we use a closure here as we update initOutput in place in the reducer!! So we generate fresh object each
+  // time
+  const initOutput = () => ({
+    // all the information relevant to the user application
+    superPower: appSavedInTeamsStateWithTeam1Joined.userApplication.about.aboutYou.superPower,
+    phone: appSavedInTeamsStateWithTeam1Joined.userApplication.about.personal.phone,
+    preferredName: appSavedInTeamsStateWithTeam1Joined.userApplication.about.personal.preferredName,
+    zipCode: appSavedInTeamsStateWithTeam1Joined.userApplication.about.personal.zipCode,
+    legalName: appSavedInTeamsStateWithTeam1Joined.userApplication.about.personal.legalName,
+    birthday: appSavedInTeamsStateWithTeam1Joined.userApplication.about.personal.birthday,
+    answer: appSavedInTeamsStateWithTeam1Joined.userApplication.questions.answer,
+    teamsRequestStatus: [
+      { hasBeenJoined: team0.hasBeenJoined, answer: team0.answer },
+      { hasBeenJoined: team1.hasBeenJoined, answer: team1.answer }
     ],
-  };
-  // TODO : I am here : add skip & valid in the state machine def
-  const nPermutations = genNperm(4);
-  const permutationsGenerator = nPermutations.map(perm => {
-    return perm.map(indexPlus1 => [joinInvalid, joinValid, skipValid, skipInvalid][indexPlus1 - 1])
+    step: appSavedInTeamsStateWithTeam1Joined.userApplication.progress.step,
+    hasApplied: appSavedInTeamsStateWithTeam1Joined.userApplication.progress.hasApplied,
+    hasReviewedApplication: appSavedInTeamsStateWithTeam1Joined.userApplication.progress.hasReviewedApplication,
+    latestTeamIndex: appSavedInTeamsStateWithTeam1Joined.userApplication.progress.latestTeamIndex,
   });
-  // const permutationsGenerator = [
-  //   // 3
-  //   [joinInvalid, joinValid, skip], // N
-  //   [joinInvalid, skip, joinValid], // Y
-  //   [joinValid, joinInvalid, skip], // N
-  //   [joinValid, skip, joinInvalid], // N
-  //   [skip, joinInvalid, joinValid], // Y
-  //   [skip, joinValid, joinInvalid], // Y
-  //   // 2
-  //   [joinValid, skip], // N
-  //   [skip, joinValid], // Y
-  //   [joinInvalid, joinValid], // N
-  //   [joinValid, joinInvalid], // N
-  //   [joinInvalid, skip], // Y
-  //   [skip, joinInvalid], // Y
-  //   // 1
-  //   [joinValid], // N
-  //   [joinInvalid], // Y
-  //   [skip], // Y
-  //   // 0
-  //   [] // Y
-  // ];
-  const suffixGenerator = [back, teamContinue, apply];
-  const teamInputSequenceGenerator = multiplyVectorByMatrixAndPrepend(suffixGenerator, permutationsGenerator);
-  const generateTeamInputSequence = (acc, input) => {
-    let { latestTeamIndex, latestAnswer, sequence } = acc;
-    if (input === joinInvalid) {
-      sequence = sequence.concat([input]);
-      latestAnswer[latestTeamIndex] = '';
+  const generateOutputSequence = (acc, input) => {
+    let {
+      superPower, phone, preferredName, zipCode, legalName, birthday, answer, teamsRequestStatus, step, hasApplied,
+      hasReviewedApplication, latestTeamIndex
+    } = acc;
+    const eventName = Object.keys(input)[0];
+    const eventData = input[eventName];
+
+    if (eventName === INIT_EVENT) {
     }
-    else if (input === joinValid) {
-      sequence = sequence.concat({ [JOIN_OR_UNJOIN_TEAM_CLICKED]: input[JOIN_OR_UNJOIN_TEAM_CLICKED](latestTeamIndex) });
-      latestAnswer[latestTeamIndex] = teamAnswer(latestTeamIndex);
-      latestTeamIndex = (latestTeamIndex + 1) % 2;
+    else if (eventName === FETCH_EV) {
     }
-    else if (input === skipValid) {
-      sequence = sequence.concat({ [SKIP_TEAM_CLICKED]: skippedTeamAnswer(latestTeamIndex) });
-      latestAnswer[latestTeamIndex] = skippedTeamAnswer(latestTeamIndex).formData.answer;
-      latestTeamIndex = (latestTeamIndex + 1) % 2;
+    else if (eventName === TEAM_CLICKED) {
     }
-    else if (input === skipInvalid) {
-      sequence = sequence.concat({ [SKIP_TEAM_CLICKED]: skippedTeamAnswerInvalid(latestTeamIndex) });
-      latestAnswer[latestTeamIndex] = skippedTeamAnswerInvalid(latestTeamIndex).formData.answer;
+    else if (eventName === TEAM_CONTINUE) {
     }
-    else if (input === back) {
-      sequence = sequence.concat({ [BACK_TEAM_CLICKED]: input[BACK_TEAM_CLICKED](latestAnswer[latestTeamIndex]) });
+    else if (eventName === APPLICATION_COMPLETED) {
     }
-    else if (input === teamContinue) {
-      sequence = sequence.concat([input]);
+    else if (eventName === JOIN_OR_UNJOIN_TEAM_CLICKED) {
+      // 3 possibilities : have to update hasBeenJoined and answer and latestTeamIndex
+      const hasBeenJoined = teamsRequestStatus[latestTeamIndex].hasBeenJoined;
+      const { formData: { answer }, validationData: { answer: isValid } } = eventData;
+
+      if (hasBeenJoined) {
+        // unjoin that team
+        teamsRequestStatus[latestTeamIndex].hasBeenJoined = false;
+        teamsRequestStatus[latestTeamIndex].answer = answer;
+        latestTeamIndex = (latestTeamIndex + 1) % 2;
+      }
+      else {
+        // Join that team if answer is valid
+        if (isValid === true) {
+          teamsRequestStatus[latestTeamIndex].hasBeenJoined = true;
+          teamsRequestStatus[latestTeamIndex].answer = answer;
+          latestTeamIndex = (latestTeamIndex + 1) % 2;
+        }
+        else {
+          // Don't change anything
+        }
+      }
     }
-    else if (input === apply) {
-      sequence = sequence.concat([input]);
+    else if (eventName === SKIP_TEAM_CLICKED) {
+      // 2 possibilities : team joined && invalid answer, or not
+      const hasBeenJoined = teamsRequestStatus[latestTeamIndex].hasBeenJoined;
+      const { formData: { answer }, validationData: { answer: isValid } } = eventData;
+
+      // NOTE : beware that isValid is true or a string...
+      if (hasBeenJoined && isValid !== true) {
+        // Don't do anything
+      }
+      else {
+        teamsRequestStatus[latestTeamIndex].answer = answer;
+        latestTeamIndex = (latestTeamIndex + 1) % 2;
+      }
+    }
+    else if (eventName === BACK_TEAM_CLICKED) {
+      // 2 possibilities : team joined && invalid answer, or not
+      const hasBeenJoined = teamsRequestStatus[latestTeamIndex].hasBeenJoined;
+      const { formData: { answer }, validationData: { answer: isValid } } = eventData;
+
+      if (hasBeenJoined && isValid !== true) {
+        // Don't do anything
+      }
+      else {
+        teamsRequestStatus[latestTeamIndex].answer = answer;
+      }
     }
     else {
       throw `unknown input!`
     }
 
-    return { latestTeamIndex, latestAnswer, sequence };
+    return {
+      superPower, phone, preferredName, zipCode, legalName, birthday, answer, teamsRequestStatus, step, hasApplied,
+      hasReviewedApplication, latestTeamIndex
+    };
   };
-  const arrTeamInputSequencesStruct = teamInputSequenceGenerator.map(permutation => {
-    return permutation.reduce(generateTeamInputSequence,
-      { latestTeamIndex: 0, latestAnswer: [`Team 0 answer`, ``], sequence: [] })
+  const outputSequenceStructs = inputSequences.map(inputSequence => {
+    const outputSequenceStruct = inputSequence.reduce(generateOutputSequence, initOutput());
+    return  outputSequenceStruct
   });
-  const arrTeamInputSequences = arrTeamInputSequencesStruct.map(sequenceStruct => sequenceStruct.sequence);
-  const reviewedAppTestSequences = multiplyVectorByMatrixAndAppend(
-    inputSequencePrefixes.reviewedApp,
-    arrTeamInputSequences
-  );
+  const expectedFinalOutputs = outputSequenceStructs
+    .map(outputSequenceStruct => {
+      const { latestTeamIndex, teamsRequestStatus, answer, superPower } = outputSequenceStruct;
 
-  // TODO : rwrite in a streamy way : for each HTMLedResults, run the assert
-  const arrResults = reviewedAppTestSequences
-    .map(sequence => {
+      return {
+        DOM: renderAppliedScreen.DOM,
+        domainAction: updateAction({
+          superPower,
+          question: answer,
+          latestTeamIndex,
+          hasReviewedApplication: true,
+          hasApplied: true,
+          step: STEP_REVIEW,
+          hasBeenJoined: teamsRequestStatus.map(team => team.hasBeenJoined),
+          answers: teamsRequestStatus.map(team => team.answer),
+        }).domainAction
+      }
+    });
+
+  // D. Generate actual results
+  const actualFinalOutputs = inputSequences
+    .map(inputSequence => {
       const machine = create_state_machine(fsm, default_settings);
-      return sequence.map(machine.yield)
+      const outputSequence = inputSequence.map(machine.yield);
+
+      return outputSequence
     })
     .map(arr => arr[arr.length - 1]);
-  const HTMLedResults = arrResults.map(lastOutput => {
-    if (lastOutput == null) return null
+  const HTMLedResults = actualFinalOutputs.map(lastOutput => {
+    if (lastOutput == null) {
+      debugger
+      throw `should never happen: by construction the input sequence leads to successful application`
+    }
+
+    // NOTE : lastOutput is an array, and should only have one element
     return mapObjIndexed((value, sinkName) => {
       if (sinkName === 'DOM') return convertVNodesToHTML(value)
       else return value
-    }, lastOutput)
+    }, lastOutput[0])
   });
 
-  // TODO : rules
-  // if join : answer not empty (join [valid && not joined])
-  // if join : answer empty (join [invalid && not joined])
-  // if unjoin : keep answer (join [joined]) (it is ok to have an empty answer in that case!! pb with previous too then)
-  // if skip && not joined : keep answer
-  // if skip && joined : answer must be non-empty
-  // if back && joined : answer must be non-empty
-  // if back && not joined : keep answer
-  // those rules ensure that no tema is joined and has an empty answer
-  // TODO : redraw the fsm graph yed.
-  // add four transitions : skipValid, skipInvalid, backInvalid, joinUnjoin, joinJoinValid, joinJoinInvalid (backValid)
-  // so we have now 6 transitions instead of 3!!!
-  // also in my tests I need to geenerate 6 permutations : [skipValid, skipInvalid, joinUnjoin, joinJoinValid,
-  // joinJoinInvalid, backInvalid] TODO!!
-  // compute output sequences TODO : hasBeenJoined: []
-  const generateTeamOutputSequence = (acc, input) => {
-    let { latestTeamIndex, latestAnswer, hasBeenJoined, isValidSequence } = acc;
-    if (input === joinInvalid) {
-      latestAnswer[latestTeamIndex] = '';
-      isValidSequence = false;
-    }
-    else if (input === joinValid) {
-      latestAnswer[latestTeamIndex] = teamAnswer(latestTeamIndex);
-      latestTeamIndex = (latestTeamIndex + 1) % 2;
-      hasBeenJoined[latestTeamIndex] = !hasBeenJoined[latestTeamIndex];
-      isValidSequence = true;
-    }
-    else if (input === skipValid) {
-      latestAnswer[latestTeamIndex] = skippedTeamAnswer(latestTeamIndex).formData.answer;
-      latestTeamIndex = (latestTeamIndex + 1) % 2;
-      isValidSequence = true;
-    }
-    else if (input === skipInvalid) {
-      latestAnswer[latestTeamIndex] = skippedTeamAnswerInvalid(latestTeamIndex).formData.answer;
-      isValidSequence = false;
-    }
-    else if (input === back) {
-    }
-    else if (input === teamContinue) {
-    }
-    else if (input === apply) {
-    }
-    else {
-      throw `unknown input!`
-    }
+  // E. Analyze results
+  const testDescriptions = inputSequences.map(inputSequence => {
+    return inputSequence.reduce((acc, input) => {
+      const eventName = Object.keys(input)[0];
+      acc = [acc, eventName].join('->');
 
-    return { latestTeamIndex, latestAnswer, hasBeenJoined, isValidSequence };
-  };
-  const outputSequenceStruct = teamInputSequenceGenerator.map(permutation => {
-    return permutation.reduce(generateTeamOutputSequence,
-      { latestTeamIndex: 0, latestAnswer: [`Team 0 answer`, ``], hasBeenJoined: [true, false], isValidSequence: true })
+      return acc
+    }, '')
   });
-  const outputs = [
-    // [joinInvalid, joinValid, skip], // N
-    [null],
-    // [joinInvalid, skip, joinValid ], // Y
-    [{
-      DOM: renderAppliedScreen.DOM,
-      "domainAction": updateAction({
-        hasApplied: true,
-        hasReviewedApplication: true,
-        hasBeenJoined: [true, false], // TODO
-        latestTeamIndex: 0, // TODO
-        answers: [`Team 0 answer`, ``] // TODO
-      }).domainAction
-    }],
-  ];
-  const testDescriptions = nPermutations.map(perm => {
-    return perm.map(indexPlus1 => [`joinInvalid`, `joinValid`, `skipValid`, `skipInvalid`][indexPlus1 - 1])
-  });
-  HTMLedResults.forEach((htmlResult, index) =>
-    assert.deepEqual(htmlResult, outputs[index], testDescriptions[index].join(', ')));
+  HTMLedResults.forEach(
+    (HTMLedResult, index) => assert.deepEqual(HTMLedResult, expectedFinalOutputs[index], testDescriptions[index])
+  );
 });

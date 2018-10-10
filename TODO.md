@@ -1,4 +1,6 @@
 # TODO
+- pass tests : HTMLedResult not properly done, and latestTeamIndex not good??
+- BUG : check the fixture bug later
 - in the new branch have tests with permutation generated and check only the last output when 
 output is expected and no output when no output expected. i.e. partial oracle
 - explain in README the bugs
