@@ -29,6 +29,6 @@
     "localforage": "^1.7.0",
     "state-transducer": "^0.8.0",
     "fp-rosetree": "^0.6.1",
-    "graph-adt": "^0.6.1"
+    "graph-adt": "^0.7.0"
   }
 }

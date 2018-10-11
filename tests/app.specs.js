@@ -27,7 +27,7 @@ import {
 } from "../src/processApplication/fsmEvents"
 import { initializeModel } from "../src/processApplication/modelUpdates"
 import { fakeOpportunityKey, fakeProjectKey, fakeUserKey } from "../fixtures"
-import { ALL_PATHS_LIMITED_TO_N_LOOPS } from "graph-adt"
+import { ALL_TRANSITIONS } from "graph-adt"
 import {
   appInABOUTandInvalidForm, appInABOUTandValidFormAndNotReviewed, appInABOUTandValidFormAndReviewed,
   appInQUESTIONandInvalidForm, appInQUESTIONandValidFormAndNotReviewed, appInQUESTIONandValidFormAndReviewed,
@@ -261,7 +261,6 @@ QUnit.test(`INIT -> About -invalid-> About -> Question -invalid-> Question -> Te
 });
 
 QUnit.test("Reviewed application saved in `Question` state : INIT -> Question -> Review -> Applied", function exec_test(assert) {
-  // ["nok","INIT_S","Question","Review","State_Applied"],
   const inputSequence = [
     INIT_I,
     { [FETCH_EV]: appSavedInQuestionState },
@@ -305,7 +304,6 @@ QUnit.test("Reviewed application saved in `Question` state : INIT -> Question ->
 });
 
 QUnit.test("Reviewed application saved in `Teams` state : INIT -> Teams -> Review -> Applied", function exec_test(assert) {
-  // ["nok","INIT_S","Teams","State_Applied"],
   const inputSequence = [
     INIT_I,
     { [FETCH_EV]: appSavedInTeamsStateWithTeam1Joined },
@@ -349,7 +347,6 @@ QUnit.test("Reviewed application saved in `Teams` state : INIT -> Teams -> Revie
 });
 
 QUnit.test("Reviewed application saved in `Review` state : INIT -> Review -> Applied", function exec_test(assert) {
-  // ["nok","INIT_S","Review","Teams","State_Applied"]
   const inputSequence = [
     INIT_I,
     { [FETCH_EV]: appSavedInReviewState },
@@ -384,6 +381,7 @@ QUnit.test("Reviewed application saved in `Review` state : INIT -> Review -> App
 QUnit.test("Teams subscription permutations", function exec_test(assert) {
   // NOTE : We are testing here input sequences which are allowed. A more exhaustive testing would also test input
   // sequences which are not allowed result in a NO_OUTPUT of the state machine
+
   // A. Generate permutations for teams by creating a section of the original state machine
   const partialFsmDef = {
     initialExtendedState: appSavedInTeamsStateWithTeam1Joined,
@@ -496,7 +494,7 @@ QUnit.test("Teams subscription permutations", function exec_test(assert) {
     ]
   };
   const generators = genPartialFsmDef.transitions;
-  const strategy = ALL_PATHS_LIMITED_TO_N_LOOPS({ maxNumberOfTraversals: 1, targetVertex: STATE_REVIEW });
+  const strategy = ALL_TRANSITIONS({targetVertex: STATE_REVIEW });
   let counter = 0;
   const settings = merge(default_settings, {
     strategy,
@@ -658,7 +656,6 @@ QUnit.test("Teams subscription permutations", function exec_test(assert) {
     .map(arr => arr[arr.length - 1]);
   const HTMLedResults = actualFinalOutputs.map(lastOutput => {
     if (lastOutput == null) {
-      debugger
       throw `should never happen: by construction the input sequence leads to successful application`
     }
 

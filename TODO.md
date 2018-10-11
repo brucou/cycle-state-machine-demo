@@ -1,6 +1,6 @@
 # TODO
-- refactor tests : no repetition, clean fixtures, etc.
-  - pass back the computation of the input sequence out of fixtures??
+- test branch first-itetation in line with the bug found and what is a first iteration - README 
+in particular
 - continue program in app
   - write fsm first in separate branch without hierarchy
   - make that work, merge that into master

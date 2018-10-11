@@ -402,8 +402,8 @@ Our model can be used to generate test sequences. Those test sequences can be ch
 ## And now the bad parts
 There is a learning curve here (state machine formalism, model-based testing). Reading
  a state machine is easy, but writing one requires to master the abstraction and modeling 
- ability, which are developed over time, like with any new abstraction. Generate input tests 
- requires some combinatorial skills and compute expected outputs can be arduous, if done by hand. 
+ ability, which are developed over time, like with any new abstraction. Generating input tests 
+ requires some combinatorial skills and computing expected outputs can be arduous, if done by hand. 
 
 The learning curve and other tradeoff can be accelerated through tooling (machine visualization, 
 machine tracing, simulation, test generation, etc.). State machine tooling in the js world is 
@@ -417,5 +417,5 @@ curve) and use it primarily :
 
 - for the critical parts of the UI where correctness matters
 - for moderately complex user interfaces
-
+    
 For those two cases, even with the learning curve, even with no tooling, the choice is a no brainer.
