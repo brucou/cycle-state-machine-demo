@@ -206,7 +206,7 @@ As we mentioned, even for a relatively simple reactive system, we handed up with
 exhaust the paths between initial state and terminal state, and that even with excluding n-loops.
 
 We finally selected only 4 tests from the **All path coverage** set, for a total of around 50/26 
-transitions taken (some transitions are taken several twice, all transitions are taken at least 
+transitions taken (some transitions are taken twice, all transitions are taken at least 
 once):
 
 ```javascript
@@ -233,7 +233,7 @@ actually simpler to write separated tests)
 Our test strategy hence can be recapitulated by :
 
 - *All transitions coverage* criteria: 4 input sequences are sufficient
-- insist on the core functionality of the system
+- insist on the core functionality of the system : 16 extra input sequences
 
 Furthermore, the process we have followed is :
 
@@ -261,8 +261,8 @@ We have 1 test failing!! We found one bug! The bug happens when we have one subs
  lies in the fact that the `Back` button registers the empty answer without checking that it is 
  indeed a valid answer. We did input validation on the `Join` button, but forget to do it on the 
  `Back` button. Actually, looking back at the application, we also forgot to do it on the `Skip` 
- button!! Note that our tests did not allow us to find the second bug, as we did not test a `Skip` 
- button click with an empty answer. 
+ button!! Note that our tests would not allow us to find the second bug, as we did not test a 
+ `Skip` button click with an empty answer. 
  
  There are two learnings to be extracted from this:
  
@@ -274,7 +274,7 @@ We have 1 test failing!! We found one bug! The bug happens when we have one subs
     combination of application data (here empty answer on clicking `Skip` button). As mentioned 
     previously we will not address data coverage here for the sake of brevity (it suffices to say
     that this concern can be addressed by property-based testing based on generating random input 
-    data). 
+    data).
 
 ### Fixing the implementation
 Further analysis leads us to the following updates in the detailed specifications :
@@ -295,40 +295,36 @@ writing new model update functions for the new transitions
 Two important things to note again :
 
 - we have moved from 3 auto-transitions to 6 for control state `Team Detail`. The previous 16 
-combinations become 1,900+ combinations. It does not really matter as we generate the 
-combinations automatically. However, because we want to keep the test fast, and the combination 
-growth is basically exponential, it is always a good idea not to have too many guards on a given 
-control state
+combinations to exhaustively test the `TEAMS` transitions become 144 combinations. It does not 
+really matter as we generate the combinations automatically. The only impact to take into account
+ is performance. With 144 input sequences, our tests slow down but execution time remains 
+ reasonable
 - the number of guards could be decreased by adding `Joined` and `Not joined` control states as 
 substates of `Team Detail` : we would then only have two guards corresponding to the error case 
-and main case. We do not do that however for the sake of simplicity (non-hierarchical graph)
+and main case. We do not do that however for the sake of simplicity (non-hierarchical graph).
 
 We of course have to update our testing strategy:
 
 - the previous *All transitions coverage* criteria can still be achieved with 4 test sequences. It 
 suffices to modify the first long sequence to include 4 extra auto-transitions
-- the 1,900+ input sequences can be generated automatically. However this time we are going to 
+- the 144 input sequences are still generated automatically. However this time we are going to 
 adopt a **different test tactic**:
   - instead of running an input sequence through the machine and testing that for each input the 
   corresponding output is generated, we will run the input sequence, but only test against the last 
-  output of the machine
-  - the rationale is that, from a user point of view, the volunteering application is the input 
-  sequence, and the expected outcome is the application being correctly registered in the relevant
-   external system (database, etc.), i.e. the final output of the machine. The sequence of screens 
-   leading to that could be seen as an implementation detail : the particular sequence of screens
-    could be changed (for instance joining or splitting screens) while the outcome would not. 
-    Such testing is less granular, and only tests part of the specification, but is also more 
-    resistant to change in specifications.
+  output of the machine, i.e. the registration of the application, which is the end goal of the 
+  system
   - we allow ourselves this heuristic because we already checked the sequence of screens previously 
   with the *All transitions coverage* criteria. We could make the white-box testing 
-  **assumption** that if any of the sequence of screens fails the specifications, the final one 
-  will also fail, most of the time. Naturally the assumption might turn out to be wrong, but as 
-  we said, we cannot test against an infinite test space, so we do not seek to **prove** our 
+  **assumption** that if any of the sequence of screens would fail the specifications, the final 
+  one would also fail, most of the time. Naturally the assumption might turn out to be wrong, but
+   as we said, we cannot test against an infinite test space, so we do not seek to **prove** our 
   program. We rather seek to fail to **disprove** it, and we pick and choose the strategy we 
   assume more economical for **finding errors** where it matters most, once we have fulfilled our 
   model coverage criteria.
 
-With that in mind, one can refer to the update in the [test implementation](TODO).
+With that in mind, one can refer to the update in the [test implementation](https://github.com/brucou/cycle-state-machine-demo/blob/first-iteration-fix/tests/app.specs.js).
+
+All tests are now passing, and the confidence in our implementation has increased.
 
  ## Run
 Check-out the branch on your local computer then type `npm run start` in the root directory for 
@@ -344,60 +340,82 @@ model, gather the resulting outputs, generate the corresponding BDD tests, and r
 this process can be automated.
 
 # Conclusion
-User interfaces are notoriously difficult to implement. 
+Pheeew! This was a long journey. Let's recapitulate the learnings.
 
-First of all, good UX/UI emerge from an iterative requirements refinement process with end users,
- which might not even be aware of what they want. Iteration cycles must be kept short, so that 
- there may be many.  During that process, the collected requirements (should) gain in formality 
- and precision. 
- State machines are an excellent tool for **formalizing precise requirements**. The formalism 
- removes ambiguity from the requirements by forcing to specify **unequivocally and entirely** 
- events, actions, conditions for actions, and variables involved in the user interface behavior. 
- 
- Additionally, state machines can be **visualized in an intuitive way** so they can act as a 
- **communication tool between stakeholders**, bridging the gap between users, designers and 
- developers, and further speeding up the iteration cycles. As we have seen in the example, the 
- designer's user flows are state machines in disguise.
-   
- Lastly, the specifications obtained in the shape of a state machine can be turned into an 
- **executable model of the user interface behaviour**. That model can be run to generate test 
- input sequences. The produced outputs can be used to verify the model, or generate concrete 
- integration tests to verify the user interface. **Automatability of testing** is not the only 
- gain. 
- Model-based testing allows to select from a potentially infinite test space, those test 
- sequences aiming at building confidence in key parts of the systems. Because more often than 
- not, requirements can be mapped to a limited set of control states of the machine, it is 
- possible to test requirements in isolation, and to **more exhaustively test those requirements 
- which are key**. In our example, we expressed the test space (paths between initial state and 
- final state), and decided to restrict testing to cover all transitions of the machine 
- (navigation, input validation, etc.), but test more extensively the team selection process 
- (traced to the `TEAMS`, `TEAM_DETAILS` control states). 
- 
- Our specific state-machine-based UI implementation, which separates event generation and action 
- execution from the encoding of user interface behaviour, is so that one can build confidence about the 
- user interface behaviour without resorting to many slow, sometimes flaky integrated tests 
- revolving around the UI automation framework of the day. Integration tests are still necessary and cannot 
- be dispensed with. However a few should be sufficient, as the behaviour itself of the UI has 
- already been tested. Integration tests can focus on systems integration or [integration contract](https://martinfowler.com/bliki/ContractTest.html).
+## User interfaces are inherently difficult to implement
+User interfaces are inherently difficult to implement because they are inherently difficult to 
+specify both accurately and economically. We have seen how the simple informal specification from 
+the designer led us to a state machine with 20+ transitions once, when in addition the happy 
+path, and miscellaneous business rules, we incorporate error paths.  
 
+User interfaces are inherently difficult to implement because user interfaces have high essential
+ complexity. The complexity of our modelization reflected closely the essential complexity of the
+  interface to design. The review feature means added complexity. The error handling means added 
+  complexity. The fields memorization features adds complexity, and actually led us to a bug. 
+  Generally speaking, the more friendly a user-interface is designed to be, the more variety of 
+  cases it will have to handle gracefully, and the more complexity we have to deal with.
 
-Conclusion 2
-Specifying UI is hard[put a link to my blog with hashtag]. It is essentially precisely and 
-economically defining the shape of an infinite solution space. This means in turn that testing UI
- is hard, and requires heuristics to reach a minimum level of confidence in the UI implementaiton
- . It turns from that implementing correct UI is hard. However the implementation problem can be 
- simplifying by collapsing specification and implementation by using state machines. State 
- machines as a matter of fact can be made execuable, and reduce the risk of both design bugs and 
- implementation bugs. Additionally, it serves as communication and documentation tool between all 
- stakeholders (designers, users, programmers, testers, etc.).
+It is then important to add the minimum accidental complexity with our implementation of the user
+ interface.
 
-The tool as its tradeoff though. It requires some learning curve as any abstraction. It requires 
-also some knowledge of algorithmics (combinatorial ability, graph search, etc.). Some of that can
- be alleviated via tooling, but there will always be a price to pay to incorporate the formalism.
-  At the same time, the benefits are clear : higher confidence in correctness of the UI due to 
-  semi-automatized extensive testing, higher maintainability due to closeness between specs and 
-  implementation, documentation and communication power.
+## Good user interfaces are the result of a highly iterative process
+Good user interfaces emerge from an iterative requirements refinement process with end users,
+ which initially might not have a fully formed awareness of their needs and wants. Iteration cycles 
+ must be kept short, so that there may be many. During that process, the collected requirements 
+ (should) gain in formality and precision.
+
+## State machines are a great tool for specifying and implementing complex user interfaces
+We mentioned already the advantages of state machines :
+
+- communicate well with stakeholders, technical and non-technical, while being at a higher level 
+of precision that user flows
+- supports the iterative user interface refinement process
+- can be used both as a model and an implementation target (executable state machine), reducing 
+accidental complexity
+- supports extensive automated testing (model-based testing, property-based testing, etc.)
+
+## Model-based testing allows for a flexible and extensive testing strategy
+Our model can be used to generate test sequences. Those test sequences can be chosen to fulfill a
+ coverage criteria. However, for even moderately complex user interfaces, achieving great coverage
+ leads to an impractical number of tests (we found 1.000+ tests in our example for the *All-paths*
+ coverage criteria). The *All-transitions* coverage criteria generally features a manageable 
+ number of tests, with the tradeoff of generating a lower confidence in the model. This coverage 
+ criteria can be complemented by focusing on specific parts of the state machine corresponding to
+  key behaviours of the user interface (in our example the teams application). We have seen how 
+  we ended up with `144 + 4 = 148` tests, around 10% of the *All-paths* criteria. 
   
-  My current recommendation is to experiment with it (to advance through for the learning curve) 
-  and use for the critical parts of the UI where correctness matters, and when a UI is relatively
-   stable, i.e. iterations brings minimal changes. 
+  Once we are satisfied with our model implementation as an executable state machine, we can use 
+  it as oracle to generate integrated tests. For instance, in our example, the 4 
+  sequences corresponding to the *All-paths* coverage criteria could be automatically transformed
+   into an integrated test suite. 
+
+## Our particular implementation facilitates actual testing further
+ Our specific state-machine-based UI implementation, separates event generation and action 
+ execution  from the encoding of user interface behaviour. We do not have a pure function but we 
+ do have an effect-less, causal function (a function whose output depends only on its previous 
+ inputs). This allows to build confidence about the user interface behaviour without resorting to
+ many slow, sometimes flaky integrated tests revolving around the UI automation framework of the
+ day. Integration tests are still necessary and cannot be dispensed with. However a few should be
+  sufficient, as the behaviour itself of the UI has already been tested. Integration tests can 
+  then focus on systems integration or [integration contract](https://martinfowler.com/bliki/ContractTest.html).
+
+## And now the bad parts
+There is a learning curve here (state machine formalism, model-based testing). Reading
+ a state machine is easy, but writing one requires to master the abstraction and modeling 
+ ability, which are developed over time, like with any new abstraction. Generate input tests 
+ requires some combinatorial skills and compute expected outputs can be arduous, if done by hand. 
+
+The learning curve and other tradeoff can be accelerated through tooling (machine visualization, 
+machine tracing, simulation, test generation, etc.). State machine tooling in the js world is 
+pretty much embryonary. We offer together with our library a test generation method (the one we 
+used for our example, and which generated the 144 test sequences). We also offer a machine 
+visualizer. 
+
+## Sooooo.... 
+My current recommendation is to experiment with state machines (to advance through for the learning 
+curve) and use it primarily :
+
+- for the critical parts of the UI where correctness matters
+- for moderately complex user interfaces
+
+For those two cases, even with the learning curve, even with no tooling, the choice is a no brainer.

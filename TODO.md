@@ -1,14 +1,6 @@
 # TODO
-- pass tests : HTMLedResult not properly done, and latestTeamIndex not good??
-- BUG : check the fixture bug later
-- in the new branch have tests with permutation generated and check only the last output when 
-output is expected and no output when no output expected. i.e. partial oracle
-- explain in README the bugs
-  - count the permutations for 6 instead of 3 (16), should be 1000+ I bet
-- tell how hard it is to write UI bugs - this is an edge case which could have gone unnoticed (at
- the same time it is minor bugs?) That shows in any case why the model have to be tested. This is
-  a model bug, not am implementation bug
-
+- refactor tests : no repetition, clean fixtures, etc.
+  - pass back the computation of the input sequence out of fixtures??
 - continue program in app
   - write fsm first in separate branch without hierarchy
   - make that work, merge that into master

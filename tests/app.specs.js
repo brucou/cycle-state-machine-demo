@@ -114,7 +114,7 @@ const INIT_I = { [INIT_EVENT]: {} };
 
 QUnit.module("Testing demo app", {});
 
-QUnit.skip(`INIT -> About -invalid-> About -> Question -invalid-> Question -> Teams -click-0-> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -back-> Teams -> Review -> Question -> Review -> About -> Review -> State_Applied`, function exec_test(assert) {
+QUnit.test(`INIT -> About -invalid-> About -> Question -invalid-> Question -> Teams -click-0-> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -> Team_Detail -back-> Teams -> Review -> Question -> Review -> About -> Review -> State_Applied`, function exec_test(assert) {
   const inputSequence = [
     INIT_I,
     { [FETCH_EV]: appUnsavedWithNoData },
@@ -260,7 +260,7 @@ QUnit.skip(`INIT -> About -invalid-> About -> Question -invalid-> Question -> Te
   });
 });
 
-QUnit.skip("Reviewed application saved in `Question` state : INIT -> Question -> Review -> Applied", function exec_test(assert) {
+QUnit.test("Reviewed application saved in `Question` state : INIT -> Question -> Review -> Applied", function exec_test(assert) {
   // ["nok","INIT_S","Question","Review","State_Applied"],
   const inputSequence = [
     INIT_I,
@@ -304,7 +304,7 @@ QUnit.skip("Reviewed application saved in `Question` state : INIT -> Question ->
     }]], `["nok","INIT_S","Question","Review","State_Applied"]`)
 });
 
-QUnit.skip("Reviewed application saved in `Teams` state : INIT -> Teams -> Review -> Applied", function exec_test(assert) {
+QUnit.test("Reviewed application saved in `Teams` state : INIT -> Teams -> Review -> Applied", function exec_test(assert) {
   // ["nok","INIT_S","Teams","State_Applied"],
   const inputSequence = [
     INIT_I,
@@ -348,7 +348,7 @@ QUnit.skip("Reviewed application saved in `Teams` state : INIT -> Teams -> Revie
     }]], `["nok","INIT_S","Teams","State_Applied"]`)
 });
 
-QUnit.skip("Reviewed application saved in `Review` state : INIT -> Review -> Applied", function exec_test(assert) {
+QUnit.test("Reviewed application saved in `Review` state : INIT -> Review -> Applied", function exec_test(assert) {
   // ["nok","INIT_S","Review","Teams","State_Applied"]
   const inputSequence = [
     INIT_I,
@@ -508,8 +508,10 @@ QUnit.test("Teams subscription permutations", function exec_test(assert) {
     opportunityKey: fakeOpportunityKey,
     projectKey: fakeProjectKey,
   });
-  // const teamsInputSequence = generateTestsFromFSM(partialFsmDef, generators, settings)
-  //   .map(({ inputSequence }) => inputSequence.slice(1))
+  // uncomment when finished
+  const teamsInputSequence = generateTestsFromFSM(partialFsmDef, generators, settings)
+  // NOTE : we do not forget to remove the init transition before merging with the prefix input sequences
+    .map(({ inputSequence }) => inputSequence.slice(1))
 
   // B. Create test input sequences
   const apply = { [APPLICATION_COMPLETED]: {} };
@@ -518,8 +520,10 @@ QUnit.test("Teams subscription permutations", function exec_test(assert) {
     { [FETCH_EV]: appSavedInTeamsStateWithTeam1Joined },
   ];
   const inputSequenceSuffix = [apply];
-  const inputSequences = inputSequencesFixture;
-  // const inputSequences = multiConcatRight(multiConcatLeft(inputSequencePrefix, teamsInputSequence), inputSequenceSuffix);
+  // comment when finished
+  // const inputSequences = inputSequencesFixture;
+  // uncomment when finished
+  const inputSequences = multiConcatRight(multiConcatLeft(inputSequencePrefix, teamsInputSequence), inputSequenceSuffix);
 
   // C. Compute expected test output sequences (compute only last output)
   const team0 = appSavedInTeamsStateWithTeam1Joined.userApplication.teams["-KFVqOyjPpR4pdgK-0Wr"];
