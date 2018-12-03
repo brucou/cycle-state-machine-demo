@@ -85,6 +85,7 @@ export function renderTeamDetailScreen(model) {
         ]),
         divErrorMessage
       ])
-    }
+    },
+    updates : []
   }
 }

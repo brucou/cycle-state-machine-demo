@@ -9,7 +9,8 @@ import { mergeModelUpdates, NO_OUTPUT } from "state-transducer"
 
 function _updateModelWithStepOnly(step, model, eventData) {
   return {
-    updates: flatten([addOpToJsonPatch('/userApplication/progress/step', step)])
+    updates: flatten([addOpToJsonPatch('/userApplication/progress/step', step)]),
+    outputs : NO_OUTPUT
   }
 }
 
@@ -113,13 +114,15 @@ export function updateModelWithAboutData(model, eventData) {
     updates: flatten([
       pojoToJsonPatch('/userApplication/about/aboutYou')(pick(aboutYouFields, formData)),
       pojoToJsonPatch('/userApplication/about/personal')(pick(personalFields, formData)),
-    ])
+    ]),
+    outputs: NO_OUTPUT
   }
 }
 
 export function updateModelWithEmptyErrorMessages(model, eventData) {
   return {
-    updates: flatten([pojoToJsonPatch('/validationMessages')({}), pojoToJsonPatch('/errorMessage')(null)])
+    updates: flatten([pojoToJsonPatch('/validationMessages')({}), pojoToJsonPatch('/errorMessage')(null)]),
+    outputs: NO_OUTPUT
   }
 }
 
@@ -130,7 +133,8 @@ export function updateModelWithQuestionDataAndStepReview(model, eventData) {
     updates: flatten([
       patchModelWithQuestionData(formData),
       addOpToJsonPatch('/userApplication/progress/step', STEP_REVIEW),
-    ])
+    ]),
+    outputs: NO_OUTPUT
   }
 }
 
@@ -138,7 +142,8 @@ export function updateModelWithQuestionData(model, eventData) {
   const formData = eventData.formData;
 
   return {
-    updates: patchModelWithQuestionData(formData)
+    updates: patchModelWithQuestionData(formData),
+    outputs: NO_OUTPUT
   }
 }
 
@@ -164,7 +169,8 @@ export function updateModelWithSelectedTeamData(model, eventData) {
     updates: flatten([
       addOpToJsonPatch('/userApplication/progress/latestTeamIndex', selectedTeamIndex),
       addOpToJsonPatch('/userApplication/progress/step', STEP_TEAM_DETAIL),
-    ])
+    ]),
+    outputs: NO_OUTPUT
   }
 }
 
@@ -177,14 +183,14 @@ export function updateModelWithSkippedTeamData(model, eventData) {
   // loop back to first team if met end of teams
   const nextTeamIndex = (latestTeamIndex + 1) % numberOfTeams;
 
-  // TODO : bug : if answer is not passing validation, keep the old answer
   return {
     updates: flatten([
       addOpToJsonPatch('/validationMessages', {}),
       addOpToJsonPatch('/userApplication/progress/latestTeamIndex', nextTeamIndex),
       addOpToJsonPatch('/userApplication/progress/step', STEP_TEAM_DETAIL),
       addOpToJsonPatch(`/userApplication/teams/${selectedTeamKey}/answer`, answer),
-    ])
+    ]),
+    outputs : NO_OUTPUT
   }
 }
 
@@ -212,7 +218,8 @@ export function updateModelWithJoinOrUnjoinedTeamData(model, eventData, joinFlag
       addOpToJsonPatch('/userApplication/progress/step', STEP_TEAM_DETAIL),
       addOpToJsonPatch(`/userApplication/teams/${selectedTeamKey}/answer`, answer),
       addOpToJsonPatch(`/userApplication/teams/${selectedTeamKey}/hasBeenJoined`, joinFlag),
-    ])
+    ]),
+    outputs : NO_OUTPUT
   }
 }
 
@@ -226,13 +233,15 @@ export function updateModelWithStepAndHasReviewed(model, eventData) {
     updates: flatten([
       addOpToJsonPatch('/userApplication/progress/step', STEP_REVIEW),
       addOpToJsonPatch('/userApplication/progress/hasReviewedApplication', true),
-    ])
+    ]),
+    outputs: NO_OUTPUT
   }
 }
 
 export function updateModelWithAppliedData(model, eventData) {
   return {
-    updates: flatten([addOpToJsonPatch('/userApplication/progress/hasApplied', true),])
+    updates: flatten([addOpToJsonPatch('/userApplication/progress/hasApplied', true),]),
+    outputs: NO_OUTPUT
   }
 }
 
@@ -240,7 +249,8 @@ function updateModelWithValidationData(model, eventData) {
   const { validationData } = eventData;
 
   return {
-    updates: pojoToJsonPatch('/validationMessages')(validationData)
+    updates: pojoToJsonPatch('/validationMessages')(validationData),
+    outputs:NO_OUTPUT
   }
 }
 
@@ -253,7 +263,8 @@ function updateModelWithTeamDetailAnswerData(model, eventData) {
   return {
     updates: flatten([
       addOpToJsonPatch(`/userApplication/teams/${selectedTeamKey}/answer`, answer),
-    ])
+    ]),
+    outputs: NO_OUTPUT
   }
 }
 

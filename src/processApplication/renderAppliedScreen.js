@@ -7,6 +7,7 @@ export function renderAppliedScreen() {
       DOM: div(".ui.raised.segment", [
         p([YOU_SUCCESSFULLY_APPLIED])
       ])
-    }
+    },
+    updates : []
   }
 }

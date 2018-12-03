@@ -131,6 +131,7 @@ export function renderAboutScreen(model, eventData, settings) {
         }, [CONTINUE]),
         divErrorMessage
       ])
-    }
+    },
+    updates: []
   }
 }

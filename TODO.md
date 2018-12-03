@@ -1,6 +1,30 @@
 # TODO
-- test branch first-itetation in line with the bug found and what is a first iteration - README 
-in particular
+- write a debug prop, which will output a nicely formatted table with console.table
+  - orig control state, extS, event (with data), target control state, guard, action
+    - could use the initial def of the machine to log object correctly with their name
+    (non-overridden functions..)
+  - or directly show the debug info (at least control state) as overlay 
+- write separate stuff about testing
+  - testing f : Domain -> Codomain, means for every x comparing f(x) vs. expected (oracle(x))
+  - tension: if we do that for whole D, we have rewritten f!!! we can be no more confident in 
+  this than in f, as the complexity is essentially the same. Two strategies : 
+  - verification : this involves specifying f in some formalism which is able to demonstrate that
+   given a set of starting assumptions, the formal specification of f, TO CONTINUE 
+  - example-based testing. We take a subset of D, and we have heuristics for computing f, whose
+     complexity is lower than the whole f
+  - property-based testing, we do not compute oracles, but we check predicates (invariants) 
+    involving computations with `(x, f(x))` as parameters. Again the idea is the computational 
+    complexity be lower, and to cover a large enough portion of the test space
+    - basically f(x) satisfies some properties whose ocmputation is simpler than `f`
+    - f(x) `implies` `property(x, f)` or `forall x, property(x, f) holds`
+  - model-based testing : can mix any of the two previous strategies. 
+    - The model may be simpler than `f` by selectively selecting the parts of `f` it replicates 
+    faithfully
+    - TO CONTINUE - have a nomenclature of testing methodologies
+    - include techniques or tactics :
+      - white box, grey box, black box
+      - Equivalence partitioning, Boundary value analysis, Decision table testing : important 
+      for example-based testing, and also a bit for property-based testing
 - continue program in app
   - write fsm first in separate branch without hierarchy
   - make that work, merge that into master

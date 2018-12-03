@@ -135,6 +135,7 @@ export function renderReviewScreen(model) {
         ]),
         divErrorMessage
       ])
-    }
+    },
+    updates : []
   }
 }

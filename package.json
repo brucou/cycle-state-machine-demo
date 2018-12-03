@@ -1,4 +1,8 @@
 {
+  "repository": "git@github.com:brucou/cycle-state-machine-demo.git",
+  "author": "brucou",
+  "license": "MIT",
+  "description": "Demo of state machine usage for specification and implementation of user interface",
   "name": "state-machine-demo",
   "version": "0.4.1",
   "scripts": {
@@ -27,7 +31,7 @@
     "@rxcc/contracts": "^0.1.11",
     "@rxcc/utils": "^0.1.8",
     "localforage": "^1.7.0",
-    "state-transducer": "^0.8.0",
+    "state-transducer": "^0.9.0",
     "fp-rosetree": "^0.6.1",
     "graph-adt": "^0.7.0"
   }

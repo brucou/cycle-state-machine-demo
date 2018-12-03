@@ -68,6 +68,7 @@ export function renderQuestionScreen(model) {
         }, [`Continue`]),
         divErrorMessage
       ])
-    }
+    },
+    updates : []
   }
 }
